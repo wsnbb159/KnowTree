@@ -1,0 +1,21 @@
+node_modules/
+dist/
+
+# 本机构建环境的临时缓存与归档（受 sandbox 保护，无法删除，只能忽略）
+._del_*
+._old_dist/
+._prev_dist*/
+.npm-cache/
+.trash/
+pdfjs-dist-*.tgz
+
+# 本地配置
+*.local
+.DS_Store
+
+# 验证截图（QA 过程产物，非源码）
+docs/qa/
+docs/qa-*.png
+
+# 赛事方提供的材料，不作为源码仓库内容
+docs/赛事手册全文.txt
