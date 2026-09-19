@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface-page: #FAFAF8;
+    --surface-card: #FFFFFF;
+    --surface-sunken: #F4F4F1;
+    --line: rgba(44, 44, 42, 0.12);
+    --line-strong: rgba(44, 44, 42, 0.24);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-[var(--surface-page)] text-ink-900 antialiased;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  ::selection {
+    background: #9FE1CB;
+    color: #04342C;
+  }
+}
+
+@layer components {
+  .kt-card {
+    @apply rounded-card border border-[var(--line)] bg-[var(--surface-card)];
+  }
+
+  .kt-btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-[var(--line-strong)]
+      bg-white px-3.5 py-2 text-[13px] font-medium text-ink-700 transition
+      hover:border-brand-400 hover:text-brand-600 disabled:cursor-not-allowed disabled:opacity-45;
+  }
+
+  .kt-btn-primary {
+    @apply border-brand-600 bg-brand-600 text-white hover:border-brand-800 hover:bg-brand-800 hover:text-white;
+  }
+
+  .kt-chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-sunken)]
+      px-2.5 py-1 text-[12px] text-ink-600;
+  }
+
+  .kt-label {
+    @apply text-[12px] font-medium tracking-wide text-ink-400;
+  }
+}
+
+@layer utilities {
+  .kt-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .kt-scroll::-webkit-scrollbar-thumb {
+    background: rgba(44, 44, 42, 0.18);
+    border-radius: 8px;
+  }
+  .kt-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* 讲解正文的排版：内容以 Markdown 形式来自模型，逐条定样式比引插件更可控 */
+.kt-prose {
+  @apply text-[13.5px] leading-[1.75] text-ink-700;
+}
+.kt-prose > *:first-child {
+  margin-top: 0;
+}
+.kt-prose > *:last-child {
+  margin-bottom: 0;
+}
+.kt-prose p {
+  margin: 0.65em 0;
+}
+.kt-prose strong {
+  font-weight: 500;
+  color: var(--surface-ink, #2c2c2a);
+}
+.kt-prose ul,
+.kt-prose ol {
+  margin: 0.6em 0;
+  padding-left: 1.35em;
+}
+.kt-prose ul {
+  list-style: disc;
+}
+.kt-prose ol {
+  list-style: decimal;
+}
+.kt-prose li {
+  margin: 0.28em 0;
+}
+.kt-prose h1,
+.kt-prose h2,
+.kt-prose h3,
+.kt-prose h4 {
+  margin: 1em 0 0.45em;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--surface-ink, #2c2c2a);
+}
+.kt-prose code {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12.5px;
+  background: var(--surface-sunken);
+  border: 0.5px solid var(--line);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+}
+.kt-prose pre {
+  margin: 0.75em 0;
+  padding: 0.85em 1em;
+  background: var(--surface-sunken);
+  border: 0.5px solid var(--line);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+.kt-prose pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 12.5px;
+  line-height: 1.65;
+}
+.kt-prose blockquote {
+  margin: 0.7em 0;
+  padding-left: 0.9em;
+  border-left: 2px solid var(--line-strong);
+  color: #5f5e5a;
+}
+.kt-prose table {
+  width: 100%;
+  margin: 0.7em 0;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.kt-prose th,
+.kt-prose td {
+  border: 0.5px solid var(--line);
+  padding: 0.4em 0.6em;
+  text-align: left;
+}
+.kt-prose th {
+  background: var(--surface-sunken);
+  font-weight: 500;
+}
+.kt-prose a {
+  color: #0f6e56;
+  text-underline-offset: 2px;
+  text-decoration: underline;
+}
+.kt-prose .katex-display {
+  margin: 0.8em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+/* KaTeX 默认字号偏大，压到与正文同阶 */
+.kt-prose .katex {
+  font-size: 1.02em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
