@@ -13,6 +13,9 @@ pdfjs-dist-*.tgz
 *.local
 .DS_Store
 
+# Vite 临时文件（每次 dev/build 都会生成新的时间戳副本）
+vite.config.ts.timestamp-*.mjs
+
 # 验证截图（QA 过程产物，非源码）
 docs/qa/
 docs/qa-*.png

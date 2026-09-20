@@ -112,7 +112,7 @@ function userPayload(context: ExplainContext): string {
     `- 该知识点常见的误解：${context.rootMisconceptions.join('；') || '（未收录）'}`,
     `- 错因类型：${ERROR_CAUSE_LABEL[context.cause]}（${ERROR_CAUSE_HINT[context.cause]}）`,
     `- 依赖链：${context.chainNames.join(' → ')}`,
-    `- 若补齐该知识点，可连带修复 ${context.blastRadius} 个后续知识点`,
+    `- 若补齐该知识点，它下游的 ${context.blastRadius} 个知识点会跟着受益`,
   ].join('\n');
 }
 

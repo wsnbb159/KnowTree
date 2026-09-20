@@ -325,7 +325,7 @@ function buildExplanation(
 function buildFallbackReasoning(context: ExplainContext): string {
   const tail =
     context.blastRadius > 0
-      ? `顺着这条链往下，已经连带影响了 ${context.blastRadius} 个后续知识点。`
+      ? `顺着这条链往下，还有 ${context.blastRadius} 个知识点挂在它后面。`
       : `补齐它，${context.targetNodeName} 会跟着通。`;
   return `你的错因是「${ERROR_CAUSE_LABEL[context.cause]}」。真正的断层在 ${context.rootNodeName}：${context.rootDefinition}。依赖链是 ${context.chainNames.join(' → ')}。${tail}`;
 }

@@ -163,9 +163,9 @@ export function DiagnosisView({ onGoCapture }: { onGoCapture: () => void }) {
               <span className="font-medium text-[#A32D2D]">{rootNode.name}</span>
             </span>
             <span>
-              补上它，可连带修复
+              补上它，下游
               <span className="font-medium text-brand-800">{blastRadius}</span>
-              个后续知识点
+              个知识点会跟着受益
             </span>
           </div>
         ) : null}
