@@ -20,5 +20,8 @@ vite.config.ts.timestamp-*.mjs
 docs/qa/
 docs/qa-*.png
 
+# 专家包打包产物（可由 scripts/ 下脚本重新生成，不入源码仓库）
+knowtree.zip
+
 # 赛事方提供的材料，不作为源码仓库内容
 docs/赛事手册全文.txt
