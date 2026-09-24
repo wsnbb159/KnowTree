@@ -35,7 +35,8 @@ export function SettingsPanel() {
   const [baseUrl, setBaseUrl] = useState(llmConfig?.baseUrl ?? '');
   const [apiKey, setApiKey] = useState(llmConfig?.apiKey ?? '');
   const [model, setModel] = useState(llmConfig?.model ?? '');
-  const [showKey, setShowKey] = useState(false);
+  // 密钥不可在界面查看完整：保存后只显示掩码，要换只能「重新输入」整体重填。
+  const [editing, setEditing] = useState<boolean>(!llmConfig?.apiKey);
   const [test, setTest] = useState<TestState>({ status: 'idle' });
 
   const activePreset = PROVIDER_PRESETS.find((preset) => preset.id === presetId) ?? null;
@@ -48,8 +49,10 @@ export function SettingsPanel() {
     setPresetId(preset.id);
     setBaseUrl(preset.baseUrl);
     setModel(preset.model);
-    // 切回配过的服务商时，密钥自动回填 —— 三家都配好，随时切换
-    setApiKey(recallLlmKey(preset.baseUrl));
+    // 切回配过的服务商时，密钥自动回填并以掩码显示（不可再查看完整）；没配过则进入编辑态。
+    const recalled = recallLlmKey(preset.baseUrl);
+    setApiKey(recalled);
+    setEditing(!recalled);
     setTest({ status: 'idle' });
   };
 
@@ -182,21 +185,41 @@ export function SettingsPanel() {
           <Field label="API Key">
             <div className="flex gap-2">
               <input
-                value={apiKey}
+                value={editing ? apiKey : maskKey(apiKey)}
                 onChange={(event) => setApiKey(event.target.value)}
-                type={showKey ? 'text' : 'password'}
+                type={editing ? 'password' : 'text'}
+                readOnly={!editing}
                 placeholder="sk-……"
                 autoComplete="off"
                 className={inputClass}
               />
-              <button
-                type="button"
-                className="kt-btn shrink-0"
-                onClick={() => setShowKey((value) => !value)}
-              >
-                {showKey ? '隐藏' : '显示'}
-              </button>
+              {!editing ? (
+                <button
+                  type="button"
+                  className="kt-btn shrink-0"
+                  onClick={() => {
+                    setApiKey('');
+                    setEditing(true);
+                    setTest({ status: 'idle' });
+                  }}
+                >
+                  重新输入
+                </button>
+              ) : null}
             </div>
+            {editing && apiKey.trim() ? (
+              <p className="mt-1.5 text-[12px] text-ink-600">
+                预览：<code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[11px]">
+                  {maskKey(apiKey)}
+                </code>
+                ，保存后界面只显示掩码，无法再查看完整密钥。
+              </p>
+            ) : null}
+            {!editing && apiKey.trim() ? (
+              <p className="mt-1.5 text-[12px] text-ink-600">
+                密钥已保存（仅存本机）。如需更换，点「重新输入」整体重填。
+              </p>
+            ) : null}
             {activePreset?.keyUrl ? (
               <a
                 href={activePreset.keyUrl}
@@ -259,6 +282,7 @@ export function SettingsPanel() {
               };
               updateLlmConfig(config);
               rememberLlmKey(config.baseUrl, config.apiKey);
+              setEditing(false);
               setTest({ status: 'idle' });
             }}
           >
@@ -278,6 +302,8 @@ export function SettingsPanel() {
               className="kt-btn"
               onClick={() => {
                 updateLlmConfig(null);
+                setApiKey('');
+                setEditing(true);
                 setTest({ status: 'idle' });
               }}
             >
@@ -301,6 +327,18 @@ export function SettingsPanel() {
 
 const inputClass =
   'min-w-0 flex-1 rounded-lg border border-[var(--line-strong)] bg-white px-3 py-2 text-[13px] outline-none transition focus:border-brand-400';
+
+/**
+ * 密钥掩码：首 4 位 + 中间圆点 + 末 4 位。
+ * 太短（≤8）则全部圆点，避免对短 key 暴露过多。
+ * 界面任何位置都只展示这个串，真实密钥只存在 state 与 localStorage。
+ */
+function maskKey(key: string): string {
+  const k = (key ?? '').trim();
+  if (!k) return '';
+  if (k.length <= 8) return '••••••••';
+  return `${k.slice(0, 4)}${'•'.repeat(Math.min(k.length - 8, 10))}${k.slice(-4)}`;
+}
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
