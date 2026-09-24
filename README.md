@@ -124,14 +124,19 @@ node scripts/verify-calculus.ts   # 《高等数学》：结构层 + 叙事层�
 
 应用默认运行在**演示模式**（内置样例回放，无需任何密钥，点开即可完整体验全部功能）。
 
-要分析真实题目，进入「设置」页切换到**远程模型**，填入任意 OpenAI 兼容端点即可。已内置预设：
+要分析真实题目，进入「设置」页切换到**远程模型**，点选服务商卡片自动填好接口与模型，粘贴 API Key 即可。卡片上直接标注「免费 / 识图」能力与免费额度，不用自己去查文档：
 
-| 服务商 | Base URL | 默认模型 |
-|---|---|---|
-| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4v-plus` |
-| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-vl-max` |
-| DeepSeek | `https://api.deepseek.com/v1` | `deepseek-chat` |
-| 自建网关 | 自行填写 | — |
+| 服务商 | Base URL | 默认模型 | 免费档位 | 识图 |
+|---|---|---|---|---|
+| 豆包 · 火山方舟 | `https://ark.cn-beijing.volces.com/api/v3` | `doubao-seed-1-6-vision-250815` | 新用户每模型 50 万 tokens | ✓ |
+| 腾讯混元 Lite | `https://api.hunyuan.cloud.tencent.com/v1` | `hunyuan-lite` | 官方宣布永久免费 | ✗ |
+| DeepSeek 官方 | `https://api.deepseek.com/v1` | `deepseek-chat` | 无免费档（按量计费，价格极低） | ✗ |
+| 硅基流动 | `https://api.siliconflow.cn/v1` | `deepseek-ai/DeepSeek-R1-Distill-Qwen-7B` | 多个小模型永久免费 | ✗ |
+| 智谱 GLM | `https://open.bigmodel.cn/api/paas/v4` | `glm-4v-flash` | glm-4v-flash 永久免费 | ✓ |
+| 通义千问 | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-vl-max` | 新用户限时额度 | ✓ |
+| 自建网关 | 自行填写 | — | — | ✓ |
+
+拍题与 PDF 诊断要求模型**支持视觉输入**；纯文本模型（DeepSeek、混元 Lite 等）只能承接追问、讲解、变式题等文本任务，界面会在选中时提前拦截并给出警示，而不是等模型报错。各服务商的 API Key 控制台入口也直接挂在卡片上，点「去 XX 控制台免费申请密钥」即跳转。**密钥按服务商分别记忆在 localStorage**，配过豆包又切去 DeepSeek，切回来时密钥自动回填。
 
 要求：模型需支持 **视觉输入**（用于读题）并以 **JSON 格式稳定输出**。
 
