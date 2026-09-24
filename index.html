@@ -10,7 +10,19 @@
     <title>知树 KnowTree · 拍题诊断你的知识断层</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- JS 加载前避免白屏；React 挂载后会替换此节点 -->
+      <div id="boot-splash" style="display:flex;min-height:100vh;align-items:center;justify-content:center;flex-direction:column;gap:16px;background:#F7F9F9;font-family:system-ui,-apple-system,sans-serif">
+        <div style="width:40px;height:40px;border:3px solid #D9E4E0;border-top-color:#0F6E56;border-radius:50%;animation:kt-spin .8s linear infinite"></div>
+        <p style="margin:0;font-size:14px;color:#5A6B6A">知树正在加载…</p>
+        <p id="boot-hint" style="margin:0;font-size:12px;color:#9AAAA8;display:none">首次访问需唤醒服务，请稍候几秒后刷新</p>
+      </div>
+      <script>
+        // 5 秒后 JS 仍未挂载，提示「唤醒服务」
+        setTimeout(function(){var h=document.getElementById('boot-hint');if(h&&!document.querySelector('#root > *:not(#boot-splash)'))h.style.display='block'},5000);
+      </script>
+      <style>@keyframes kt-spin{to{transform:rotate(360deg)}}</style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
