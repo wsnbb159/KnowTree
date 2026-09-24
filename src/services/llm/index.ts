@@ -1,5 +1,6 @@
 export * from './types';
 export { createOpenAiCompatibleProvider, PROVIDER_PRESETS } from './openai-compatible';
+export type { ProviderPreset } from './openai-compatible';
 export { createDemoProvider } from './demo';
 export type { DemoBundle } from './demo';
 export {

@@ -3,13 +3,20 @@
  *
  * 双模式是刻意的架构决策：
  * - 演示模式：内置完整样例，评委打开链接零依赖可用；
- * - 远程模式：OpenAI 兼容协议，智谱 / 通义 / DeepSeek / 自建网关皆可接。
- * 密钥只写进本机 localStorage，不经过任何第三方（包括我们自己 —— 本作品没有后端）。
+ * - 远程模式：OpenAI 兼容协议。豆包（火山方舟）、腾讯混元 Lite、
+ *   DeepSeek、硅基流动、智谱、通义都有免费或极低价档位，点开卡片即用。
+ * 密钥只写进本机 localStorage（按服务商分别记忆，切换不丢），
+ * 不经过任何第三方 —— 本作品没有后端。
  */
 
 import { useState, type ReactNode } from 'react';
 import { useStore } from '@/app/store';
-import { createOpenAiCompatibleProvider, PROVIDER_PRESETS } from '@/services/llm/openai-compatible';
+import {
+  createOpenAiCompatibleProvider,
+  PROVIDER_PRESETS,
+  type ProviderPreset,
+} from '@/services/llm/openai-compatible';
+import { recallLlmKey, rememberLlmKey } from '@/services/storage/repository';
 import { Card, CardTitle, Chip } from '@/components/ui';
 
 type TestState =
@@ -21,13 +28,30 @@ type TestState =
 export function SettingsPanel() {
   const { engineMode, llmConfig, updateLlmConfig, setEngineMode } = useStore();
 
+  const [presetId, setPresetId] = useState<string | null>(() => {
+    const hit = PROVIDER_PRESETS.find((preset) => preset.baseUrl === llmConfig?.baseUrl);
+    return hit?.id ?? null;
+  });
   const [baseUrl, setBaseUrl] = useState(llmConfig?.baseUrl ?? '');
   const [apiKey, setApiKey] = useState(llmConfig?.apiKey ?? '');
   const [model, setModel] = useState(llmConfig?.model ?? '');
   const [showKey, setShowKey] = useState(false);
   const [test, setTest] = useState<TestState>({ status: 'idle' });
 
+  const activePreset = PROVIDER_PRESETS.find((preset) => preset.id === presetId) ?? null;
+  const visionBlocked =
+    activePreset !== null && !activePreset.supportsVision && baseUrl.trim() === activePreset.baseUrl;
+
   const formReady = baseUrl.trim() !== '' && apiKey.trim() !== '' && model.trim() !== '';
+
+  const selectPreset = (preset: ProviderPreset) => {
+    setPresetId(preset.id);
+    setBaseUrl(preset.baseUrl);
+    setModel(preset.model);
+    // 切回配过的服务商时，密钥自动回填 —— 三家都配好，随时切换
+    setApiKey(recallLlmKey(preset.baseUrl));
+    setTest({ status: 'idle' });
+  };
 
   const runTest = async () => {
     if (!formReady) return;
@@ -104,23 +128,46 @@ export function SettingsPanel() {
       <Card>
         <CardTitle
           title="远程模型配置"
-          hint="OpenAI 兼容协议。密钥仅保存在本机浏览器，不会上传到任何服务器。"
+          hint="OpenAI 兼容协议。点选服务商卡片自动填好接口与模型，密钥仅保存在本机浏览器。"
         />
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          {PROVIDER_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              className="kt-btn py-1.5 text-[12px]"
-              onClick={() => {
-                setBaseUrl(preset.baseUrl);
-                setModel(preset.model);
-              }}
-            >
-              {preset.label}
-            </button>
-          ))}
+        <div className="mb-4 grid gap-2 sm:grid-cols-2">
+          {PROVIDER_PRESETS.map((preset) => {
+            const selected = preset.id === presetId;
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => selectPreset(preset)}
+                className={`rounded-lg border p-3 text-left transition ${
+                  selected
+                    ? 'border-brand-400 bg-brand-50'
+                    : 'border-[var(--line)] bg-white hover:border-brand-200'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[13px] font-medium text-ink-900">{preset.label}</span>
+                  <span className="flex shrink-0 gap-1">
+                    {preset.free ? (
+                      <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[11px] text-brand-800">
+                        免费
+                      </span>
+                    ) : null}
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[11px] ${
+                        preset.supportsVision
+                          ? 'bg-[#E6F1FE] text-[#185FA5]'
+                          : 'bg-[var(--surface-sunken)] text-ink-600'
+                      }`}
+                    >
+                      {preset.supportsVision ? '识图' : '纯文本'}
+                    </span>
+                  </span>
+                </div>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-ink-600">{preset.freeTier}</p>
+              </button>
+            );
+          })}
         </div>
 
         <div className="space-y-3">
@@ -150,16 +197,36 @@ export function SettingsPanel() {
                 {showKey ? '隐藏' : '显示'}
               </button>
             </div>
+            {activePreset?.keyUrl ? (
+              <a
+                href={activePreset.keyUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1.5 inline-block text-[12px] text-brand-700 underline underline-offset-2"
+              >
+                去{activePreset.label}控制台免费申请密钥 ↗
+              </a>
+            ) : null}
           </Field>
           <Field label="模型名称">
             <input
               value={model}
               onChange={(event) => setModel(event.target.value)}
-              placeholder="glm-4v-plus / qwen-vl-max / deepseek-chat"
+              placeholder="doubao-seed-1-6-vision-250815 / glm-4v-flash / deepseek-chat"
               className={inputClass}
             />
+            {activePreset?.note ? (
+              <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-600">{activePreset.note}</p>
+            ) : null}
           </Field>
         </div>
+
+        {visionBlocked ? (
+          <div className="mt-3 rounded-lg bg-[#FAEEDA] px-3.5 py-2.5 text-[12.5px] leading-relaxed text-[#854F0B]">
+            该模型不支持识图：拍题与 PDF 诊断会失败，只有追问、讲解、变式题等纯文本任务可用。
+            想体验完整链路，请换用带「识图」徽章的服务商（如豆包、智谱）。
+          </div>
+        ) : null}
 
         {test.status !== 'idle' ? (
           <div
@@ -185,7 +252,13 @@ export function SettingsPanel() {
             className="kt-btn kt-btn-primary"
             disabled={!formReady}
             onClick={() => {
-              updateLlmConfig({ baseUrl: baseUrl.trim(), apiKey: apiKey.trim(), model: model.trim() });
+              const config = {
+                baseUrl: baseUrl.trim(),
+                apiKey: apiKey.trim(),
+                model: model.trim(),
+              };
+              updateLlmConfig(config);
+              rememberLlmKey(config.baseUrl, config.apiKey);
               setTest({ status: 'idle' });
             }}
           >

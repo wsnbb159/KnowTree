@@ -18,6 +18,7 @@ const KEY_PREFIX = 'knowtree.v1';
 
 const keys = {
   llm: `${KEY_PREFIX}.llm-config`,
+  llmKeys: `${KEY_PREFIX}.llm-key-memory`,
   diagnoses: `${KEY_PREFIX}.diagnoses`,
   mastery: `${KEY_PREFIX}.mastery`,
   reviews: `${KEY_PREFIX}.reviews`,
@@ -50,6 +51,34 @@ export function loadLlmConfig(): RemoteLlmConfig | null {
 
 export function saveLlmConfig(config: RemoteLlmConfig | null): void {
   write(keys.llm, config);
+}
+
+/**
+ * 各服务商的密钥记忆（按 baseUrl 归档）。
+ *
+ * 学生配过豆包又切去 DeepSeek，切回来时密钥不该丢 ——
+ * 「三家都配好、随时切换」才算真正配进去了。
+ * 与 llm-config 一样只留本机，不上传任何地方。
+ */
+export function loadLlmKeyMemory(): Record<string, string> {
+  return read<Record<string, string>>(keys.llmKeys, {});
+}
+
+export function rememberLlmKey(baseUrl: string, apiKey: string): void {
+  const normalized = baseUrl.trim().replace(/\/+$/, '');
+  if (!normalized) return;
+  const memory = loadLlmKeyMemory();
+  if (apiKey.trim()) {
+    memory[normalized] = apiKey.trim();
+  } else {
+    delete memory[normalized];
+  }
+  write(keys.llmKeys, memory);
+}
+
+export function recallLlmKey(baseUrl: string): string {
+  const normalized = baseUrl.trim().replace(/\/+$/, '');
+  return normalized ? (loadLlmKeyMemory()[normalized] ?? '') : '';
 }
 
 /* ------------------------------ 诊断记录 ------------------------------ */

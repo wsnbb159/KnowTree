@@ -98,14 +98,106 @@ export function createOpenAiCompatibleProvider(config: RemoteLlmConfig): LlmProv
   };
 }
 
-/** 常见服务商的预设，省去学生自己查接口地址 */
-export const PROVIDER_PRESETS: { label: string; baseUrl: string; model: string }[] = [
-  { label: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4v-plus' },
+/**
+ * 服务商预设。
+ *
+ * 拍题诊断依赖识图能力，所以每个预设都显式标注 supportsVision ——
+ * 纯文本模型（DeepSeek、混元 Lite 等）只能承接追问 / 讲解，
+ * 界面必须提前拦住，不能等模型报错才让学生知道。
+ *
+ * 免费额度信息只写「档位」，不写精确数字的失效日期 ——
+ * 各平台政策会变，以 keyUrl 指向的控制台为准。
+ */
+export interface ProviderPreset {
+  id: string;
+  label: string;
+  baseUrl: string;
+  model: string;
+  /** 是否支持图片输入；拍题 / PDF 诊断要求 true */
+  supportsVision: boolean;
+  /** 是否有可用的免费档位（决定界面上的「免费」徽章） */
+  free: boolean;
+  /** 免费档位说明（一句话，界面上直接展示） */
+  freeTier: string;
+  /** 申请 API Key 的控制台地址 */
+  keyUrl: string;
+  /** 补充说明（可选） */
+  note?: string;
+}
+
+export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
+    id: 'doubao',
+    label: '豆包 · 火山方舟',
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    model: 'doubao-seed-1-6-vision-250815',
+    supportsVision: true,
+    free: true,
+    freeTier: '新用户每个模型送 50 万 tokens，够诊断上百道题',
+    keyUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey',
+    note: '模型名以方舟控制台「在线推理」列表为准，也可直接填推理接入点 ep-xxxxxxxx',
+  },
+  {
+    id: 'hunyuan-lite',
+    label: '腾讯混元 Lite',
+    baseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
+    model: 'hunyuan-lite',
+    supportsVision: false,
+    free: true,
+    freeTier: '官方宣布永久免费',
+    keyUrl: 'https://console.cloud.tencent.com/hunyuan/api-key',
+    note: '与元宝同族的腾讯自研模型；不支持识图，仅适合追问、讲解等纯文本任务',
+  },
+  {
+    id: 'deepseek',
+    label: 'DeepSeek 官方',
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
+    supportsVision: false,
+    free: false,
+    freeTier: '无免费档，按量计费但价格极低',
+    keyUrl: 'https://platform.deepseek.com/api_keys',
+    note: '不支持识图；想要免费 DeepSeek，可用火山方舟里的 DeepSeek 模型（同样送 50 万 tokens）',
+  },
+  {
+    id: 'siliconflow',
+    label: '硅基流动',
+    baseUrl: 'https://api.siliconflow.cn/v1',
+    model: 'deepseek-ai/DeepSeek-R1-Distill-Qwen-7B',
+    supportsVision: false,
+    free: true,
+    freeTier: '多个小参数模型永久免费，完整版 DeepSeek 低价',
+    keyUrl: 'https://cloud.siliconflow.cn/account/ak',
+    note: '聚合平台，模型名以控制台「模型广场」为准；免费档位模型不支持识图',
+  },
+  {
+    id: 'zhipu',
+    label: '智谱 GLM',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    model: 'glm-4v-flash',
+    supportsVision: true,
+    free: true,
+    freeTier: 'glm-4v-flash 官方永久免费，且支持识图',
+    keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
+  },
+  {
+    id: 'qwen',
     label: '通义千问',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     model: 'qwen-vl-max',
+    supportsVision: true,
+    free: true,
+    freeTier: '新用户每个模型有限时免费额度',
+    keyUrl: 'https://bailian.console.aliyun.com/?apiKey=1#/api-key',
   },
-  { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-  { label: '自建网关', baseUrl: '', model: '' },
+  {
+    id: 'custom',
+    label: '自建网关',
+    baseUrl: '',
+    model: '',
+    supportsVision: true,
+    free: false,
+    freeTier: '学校或团队自建的 OpenAI 兼容网关',
+    keyUrl: '',
+  },
 ];

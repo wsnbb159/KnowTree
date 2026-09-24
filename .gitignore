@@ -25,3 +25,7 @@ knowtree.zip
 
 # 赛事方提供的材料，不作为源码仓库内容
 docs/赛事手册全文.txt
+
+# 本机 QA 临时目录与构建归档
+.cache/
+dist.bak.*/
