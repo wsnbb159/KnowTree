@@ -12,6 +12,14 @@
  *
  * 学生以为自己在「二重积分」丢了分，其实真正断掉的是「定积分换元」。
  * 一门课的失分往往不是均匀分布的 —— 这正是知树要替学生算出来的。
+ *
+ * 全树覆盖同济第七版第 1–12 章主干（含第 8 章空间解析几何、第 11 章曲线曲面积分），
+ * 跨模块隐式依赖额外补了若干：
+ *   空间解析几何 → 多元函数（定义域是空间区域，方向导数/梯度是向量）
+ *   空间曲面 → 三重积分（积分区域由曲面围成）
+ *   二重积分 → 格林公式（把曲线积分翻成二重积分）
+ *   三重积分 ↔ 高斯公式（把曲面积分翻成三重积分）
+ *   曲线积分 ↔ 斯托克斯公式（把曲面积分翻成曲线积分）
  */
 
 import type { KnowledgeTree } from '@/domain/types';
@@ -382,6 +390,105 @@ export const calculusTree: KnowledgeTree = {
       sources: ['同济《高等数学》6.1–6.2'],
     },
 
+    /* ---------------- 第8章 空间解析几何与向量代数 ---------------- */
+    {
+      id: 'calc.geom.vector',
+      courseId: 'calculus',
+      name: '空间直角坐标系与向量代数',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '向量的概念与线性运算、坐标表示、方向余弦，以及空间两点间距离公式。',
+      difficulty: 2,
+      cognitive: 'understand',
+      prerequisites: ['calc.func.concept'],
+      misconceptions: [
+        '把「向量」与「数量」混用，对向量做除法',
+        '方向余弦的平方和忘了等于 1，当成三个独立量',
+        '用坐标表示点与表示向量时不加区分',
+      ],
+      sources: ['同济《高等数学》8.1–8.2'],
+    },
+    {
+      id: 'calc.geom.product',
+      courseId: 'calculus',
+      name: '数量积与向量积',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '点积的代数与几何定义、叉积的右手定则与混合积，三者各自的几何意义。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.geom.vector'],
+      misconceptions: [
+        '把点积结果当成向量（它是一个数）',
+        '叉积的方向用错手（应统一用右手定则）',
+        '混合积为零不会判定三向量共面',
+        '把叉积的交换律记成 a×b = b×a（实为 −b×a）',
+      ],
+      sources: ['同济《高等数学》8.2'],
+    },
+    {
+      id: 'calc.geom.plane',
+      courseId: 'calculus',
+      name: '平面方程',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '点法式、一般式、截距式，以及两平面的夹角与平行/垂直判定。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.geom.product'],
+      misconceptions: [
+        '点法式里把法向量写成面上的向量（法向量应垂直于面）',
+        '一般式 Ax+By+Cz+D=0 中把 (A,B,C) 当成面上的点',
+        '两平面夹角公式记成法向量的夹角而不取补角（夹角取锐角）',
+      ],
+      sources: ['同济《高等数学》8.3'],
+    },
+    {
+      id: 'calc.geom.line',
+      courseId: 'calculus',
+      name: '空间直线方程',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '对称式、参数式、一般式（两平面交线），以及线线、线面位置关系。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.geom.product', 'calc.geom.plane'],
+      misconceptions: [
+        '对称式的分母写成直线上一点的坐标（应为方向向量）',
+        '参数式与对称式互化时方向数搞丢',
+        '求两直线夹角时不区分「同过一点」与「异面」',
+      ],
+      sources: ['同济《高等数学》8.4'],
+    },
+    {
+      id: 'calc.geom.distance',
+      courseId: 'calculus',
+      name: '点线面的距离与夹角',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '点到平面、点到直线的距离公式，以及直线与平面、两平面之间的夹角。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.geom.plane', 'calc.geom.line'],
+      misconceptions: [
+        '点到直线距离公式把分母的叉积模错记成点积',
+        '点到平面距离公式中 D 的符号忘记处理（应把点坐标代入化为同侧）',
+        '线面夹角与法向量夹角的关系记反（互余）',
+      ],
+      sources: ['同济《高等数学》8.4–8.5'],
+    },
+    {
+      id: 'calc.geom.surface',
+      courseId: 'calculus',
+      name: '二次曲面与旋转曲面',
+      chapter: '第8章 空间解析几何与向量代数',
+      summary: '椭球面、抛物面、双曲面等二次曲面的标准方程，以及旋转曲面的生成方法。',
+      difficulty: 4,
+      cognitive: 'analyze',
+      prerequisites: ['calc.geom.distance'],
+      misconceptions: [
+        '看到方程就当是球面，不区分椭球面与单叶双曲面',
+        '旋转曲面生成时把母线与旋转轴搞混',
+        '由方程不会用「截痕法」画出曲面形状',
+      ],
+      sources: ['同济《高等数学》8.6'],
+    },
+
     /* ---------------- 第9章 多元函数微分法 ---------------- */
     {
       id: 'calc.multivar.concept',
@@ -391,7 +498,8 @@ export const calculusTree: KnowledgeTree = {
       summary: '二元函数的定义域、二重极限（沿任意路径趋于一点）。',
       difficulty: 4,
       cognitive: 'understand',
-      prerequisites: ['calc.func.concept', 'calc.limit.concept'],
+      // 跨模块依赖：多元函数的定义域是平面/空间区域，没有空间解析几何就画不出区域。
+      prerequisites: ['calc.func.concept', 'calc.limit.concept', 'calc.geom.vector'],
       misconceptions: [
         '把二重极限等同于二次极限（先对 x 再对 y 取）',
         '只验证一条路径就断言极限存在',
@@ -642,7 +750,8 @@ export const calculusTree: KnowledgeTree = {
       summary: '用「分割、近似、求和、取极限」定义三重积分，理解其物理意义为空间物体的质量。',
       difficulty: 4,
       cognitive: 'understand',
-      prerequisites: ['calc.multint.definite'],
+      // 跨模块依赖：三重积分的区域由空间曲面围成，不会认曲面就画不出区域。
+      prerequisites: ['calc.multint.definite', 'calc.geom.surface'],
       misconceptions: [
         '把三重积分的 dV 当成 dx·dy·dz 只是记号，不理解它是体积微元',
         '忽略积分区域的可求体积这一前提',
@@ -711,6 +820,123 @@ export const calculusTree: KnowledgeTree = {
         '建立微元时把 dV 与投影面积 dσ 混用',
       ],
       sources: ['同济《高等数学》10.4 应用'],
+    },
+
+    /* ---------------- 第11章 曲线积分与曲面积分 ---------------- */
+    {
+      id: 'calc.curve.arc',
+      courseId: 'calculus',
+      name: '对弧长的曲线积分（第一类）',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '沿曲线对函数积分，弧长微元 ds 由参数方程确定，与方向无关。',
+      difficulty: 4,
+      cognitive: 'apply',
+      // 弧长微元来自定积分应用，参数化要向量代数。
+      prerequisites: ['calc.integral.geometry', 'calc.geom.product'],
+      misconceptions: [
+        'ds 的表达式写错（参数式下漏乘 √(x′²+y′²)，直角下漏 √(1+y′²))',
+        '把对弧长的曲线积分与对坐标的搞混，加错方向',
+        '弧长微元带绝对值，被误当成可正可负',
+      ],
+      sources: ['同济《高等数学》11.1'],
+    },
+    {
+      id: 'calc.curve.coord',
+      courseId: 'calculus',
+      name: '对坐标的曲线积分（第二类）',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '沿曲线对向量场的分量积分，方向影响符号，是物理中「变力沿路径做功」的抽象。',
+      difficulty: 5,
+      cognitive: 'apply',
+      prerequisites: ['calc.curve.arc', 'calc.geom.product'],
+      misconceptions: [
+        '反向积分不取负号（第二类与方向有关）',
+        '把 Pdx+Qdy 拆成两个独立的第一类曲线积分',
+        '参数化后忘记把上下限按方向排（起点终点顺序）',
+      ],
+      sources: ['同济《高等数学》11.2'],
+    },
+    {
+      id: 'calc.curve.green',
+      courseId: 'calculus',
+      name: '格林公式与路径无关',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '把闭曲线上的第二类曲线积分翻成二重积分 ∬(∂Q/∂x − ∂P/∂y)，以及四个等价条件。',
+      difficulty: 5,
+      cognitive: 'analyze',
+      // 三重前置：曲线积分本身、二重积分计算、偏导数（∂Q/∂x）。
+      prerequisites: ['calc.curve.coord', 'calc.multint.iteration', 'calc.multivar.partial'],
+      misconceptions: [
+        '不验证「闭曲线且方向为正向」就用格林公式',
+        '有奇点时直接套公式，不挖洞处理',
+        '路径无关四个等价条件里漏掉「沿任意闭曲线积分为零」',
+        '把 ∂Q/∂x 与 ∂P/∂y 的位置写反',
+      ],
+      sources: ['同济《高等数学》11.3'],
+    },
+    {
+      id: 'calc.surface.arc',
+      courseId: 'calculus',
+      name: '对面积的曲面积分（第一类）',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '在曲面上对函数积分，面积微元 dS 由曲面投影到坐标面确定。',
+      difficulty: 5,
+      cognitive: 'apply',
+      prerequisites: ['calc.integral.geometry', 'calc.geom.surface', 'calc.multint.polar'],
+      misconceptions: [
+        '投影到 xOy 面时漏掉 √(1+z_x² + z_y²) 因子',
+        '把 dS 与投影面积 dxdy 当成同一个量',
+        '不会选投影面，导致被积函数无法化简',
+      ],
+      sources: ['同济《高等数学》11.4'],
+    },
+    {
+      id: 'calc.surface.coord',
+      courseId: 'calculus',
+      name: '对坐标的曲面积分（第二类）',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '在曲面上对向量场分量积分，方向由法向量指向决定，是「通量」的抽象。',
+      difficulty: 5,
+      cognitive: 'apply',
+      prerequisites: ['calc.surface.arc', 'calc.geom.surface'],
+      misconceptions: [
+        '上下侧/内外侧的符号定错（与法向量指向一致才取正）',
+        '把 dydz、dzdx、dxdy 三个投影混用',
+        '化成第一类时不投影、硬背符号表',
+      ],
+      sources: ['同济《高等数学》11.5'],
+    },
+    {
+      id: 'calc.surface.gauss',
+      courseId: 'calculus',
+      name: '高斯公式与散度',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '把闭曲面上的第二类曲面积分翻成三重积分 ∭(∂P/∂x+∂Q/∂y+∂R/∂z)，散度即括号里的和。',
+      difficulty: 5,
+      cognitive: 'analyze',
+      prerequisites: ['calc.surface.coord', 'calc.triple.cartesian', 'calc.multivar.partial'],
+      misconceptions: [
+        '不验证「封闭曲面且取外侧」就用高斯公式',
+        '散度表达式漏项（三个偏导数只写两个）',
+        '曲面不封闭时不会补面再相减',
+      ],
+      sources: ['同济《高等数学》11.6'],
+    },
+    {
+      id: 'calc.surface.stokes',
+      courseId: 'calculus',
+      name: '斯托克斯公式与旋度',
+      chapter: '第11章 曲线积分与曲面积分',
+      summary: '把闭曲线上的第二类曲线积分翻成曲面积分，旋度向量是其内核。',
+      difficulty: 5,
+      cognitive: 'analyze',
+      prerequisites: ['calc.curve.green', 'calc.surface.coord', 'calc.geom.product'],
+      misconceptions: [
+        '旋度行列式的展开符号记错',
+        '把斯托克斯与格林混用（格林是斯托克斯在平面上的特例）',
+        '不验证边界曲线与曲面法向是否成右手关系',
+      ],
+      sources: ['同济《高等数学》11.7'],
     },
 
     /* ---------------- 第12章 无穷级数 ---------------- */

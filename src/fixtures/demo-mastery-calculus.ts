@@ -61,6 +61,14 @@ export const calculusMastery: MasteryRecord[] = [
   m('calc.integral.improper', 55, 3),
   m('calc.integral.geometry', 60, 4),
 
+  /* 第8章 空间解析几何：基础还行，点线面距离与二次曲面偏弱 */
+  m('calc.geom.vector', 80, 5),
+  m('calc.geom.product', 72, 6),
+  m('calc.geom.plane', 66, 5),
+  m('calc.geom.line', 64, 5),
+  m('calc.geom.distance', 58, 4), // ← 点线面距离公式易混
+  m('calc.geom.surface', 54, 3), // ← 二次曲面认不全
+
   /* 第9章 多元微分：概念层还行，需要画路径的链式法则就崩 */
   m('calc.multivar.concept', 70, 4),
   m('calc.multivar.partial', 68, 8),
@@ -88,6 +96,15 @@ export const calculusMastery: MasteryRecord[] = [
   m('calc.triple.cylindrical', 46, 4), // ← 同一个 Jacobi 因子问题再次发生
   m('calc.triple.spherical', 42, 3), // ← 链条末端
   m('calc.triple.application', 60, 3),
+
+  /* 第11章 曲线积分与曲面积分：三个公式是难点，链条末端最塌 */
+  m('calc.curve.arc', 68, 4),
+  m('calc.curve.coord', 60, 5), // 边界：方向影响符号
+  m('calc.curve.green', 56, 4), // ← 闭曲线与挖洞
+  m('calc.surface.arc', 58, 3),
+  m('calc.surface.coord', 52, 3), // ← 内外侧符号
+  m('calc.surface.gauss', 48, 3), // ← 补面法
+  m('calc.surface.stokes', 44, 2), // ← 链条末端最弱
 
   /* 第12章 无穷级数：中间的审敛法失守，后面整片跟着塌 */
   m('calc.series.concept', 68, 5),

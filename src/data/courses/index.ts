@@ -20,7 +20,7 @@ export const courses: Course[] = [
     id: 'calculus',
     name: '高等数学',
     audience: '理工科 · 大一',
-    description: '已完整建模：9 章 49 个知识点，含跨模块的隐式前置依赖。',
+    description: '已完整建模：12 章 62 个知识点，含跨模块的隐式前置依赖（第 8 章贯通多元微分与曲面积分、第 11 章三大公式串起曲线/曲面/重积分）。',
   },
   {
     id: 'linear-algebra',
