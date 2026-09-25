@@ -10,6 +10,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -23,10 +24,12 @@ import {
   type DiagnosisStage,
 } from '@/domain/diagnosis/engine';
 import { createDemoProvider } from '@/services/llm/demo';
-import { createOpenAiCompatibleProvider } from '@/services/llm/openai-compatible';
+import { createOpenAiCompatibleProvider, PROVIDER_PRESETS } from '@/services/llm/openai-compatible';
+import { recallLlmKey } from '@/services/storage/repository';
 import { buildFollowupMessages } from '@/services/llm/prompt';
 import type { LlmProvider, RemoteLlmConfig } from '@/services/llm/types';
 import { makeThumbnail } from '@/utils/image';
+import { mountKnowTreeApi, emitDiagnosisEvent } from '@/services/plugin-api';
 import {
   applyMasteryUpdate,
   createReviewItem,
@@ -129,6 +132,12 @@ interface StoreValue {
   llmConfig: RemoteLlmConfig | null;
   updateLlmConfig: (config: RemoteLlmConfig | null) => void;
   engineLabel: string;
+  /** 插件注入的外部模型调用器（优先级最高，WorkBuddy 容器注入后覆盖一切） */
+  externalAdapterLabel: string | null;
+  setExternalAdapter: (adapter: LlmProvider | null) => void;
+  /** 快速切换：按预设 id 应用已记忆的密钥，一键换模型 */
+  activePresetId: string | null;
+  applyPreset: (presetId: string) => boolean;
 
   /* 其他 */
   demoCases: typeof demoCases;
@@ -155,6 +164,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [reviews, setReviews] = useState<ReviewItem[]>(() => loadReviews());
   const [engineMode, setEngineMode] = useState<EngineMode>('demo');
   const [llmConfig, setLlmConfig] = useState<RemoteLlmConfig | null>(() => loadLlmConfig());
+  // 插件注入的外部调用器：优先级最高，用于 WorkBuddy 容器注入自己的模型能力。
+  const [externalAdapter, setExternalAdapterState] = useState<LlmProvider | null>(null);
+  // 当前生效的预设 id（用于快速切换按钮高亮）。
+  const [activePresetId, setActivePresetId] = useState<string | null>(() => {
+    const hit = PROVIDER_PRESETS.find((preset) => preset.baseUrl === llmConfig?.baseUrl);
+    return hit?.id ?? null;
+  });
   const [stage, setStage] = useState<DiagnosisStage | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,6 +206,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const resolveProvider = useCallback(
     (caseId: string): LlmProvider => {
+      // 优先级：外部插件注入 > 设置页远程配置 > 演示模式。
+      // WorkBuddy 容器注入 adapter 后，知树就用它调模型，不关心背后是什么。
+      if (externalAdapter) return externalAdapter;
       if (engineMode === 'remote' && llmConfig) {
         return createOpenAiCompatibleProvider(llmConfig);
       }
@@ -197,7 +216,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const demoCase = findDemoCaseIn(courseId, caseId) ?? courseCases[0];
       return createDemoProvider(demoCase.bundle);
     },
-    [courseId, engineMode, llmConfig],
+    [courseId, engineMode, llmConfig, externalAdapter],
   );
 
   const run = useCallback(
@@ -224,6 +243,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const nextDiagnoses = saveDiagnosis(diagnosis);
         setDiagnoses(nextDiagnoses);
         setActiveDiagnosisId(diagnosis.id);
+        // 通知外部插件：一道题诊断完了
+        emitDiagnosisEvent(diagnosis.id, diagnosis.courseId);
 
         // 诊断本身不直接改掌握度：掌握度只在学生做完复测题后才动，
         // 这样「掌握度」反映的是真实能力，而不是拍题次数。
@@ -242,8 +263,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       diagnosis: Diagnosis,
       history: { role: 'user' | 'assistant'; content: string }[],
     ): Promise<string> => {
-      const provider =
-        engineMode === 'remote' && llmConfig
+      const provider = externalAdapter
+        ? externalAdapter
+        : engineMode === 'remote' && llmConfig
           ? createOpenAiCompatibleProvider(llmConfig)
           : (() => {
               // 追问要找回**这门课、这道题**对应的预置回答。
@@ -266,7 +288,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }),
       );
     },
-    [engineMode, llmConfig, index],
+    [engineMode, llmConfig, externalAdapter, index],
   );
 
   const runFromImage = useCallback(
@@ -333,7 +355,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setLlmConfig(config);
     saveLlmConfig(config);
     setEngineMode(config ? 'remote' : 'demo');
+    const hit = config ? PROVIDER_PRESETS.find((p) => p.baseUrl === config.baseUrl) : null;
+    setActivePresetId(hit?.id ?? null);
   }, []);
+
+  // 插件注入：外部容器（如 WorkBuddy）传入一个实现了 complete() 的对象，
+  // 知树就用它调模型，不关心背后是什么模型、走什么协议。
+  const setExternalAdapter = useCallback((adapter: LlmProvider | null) => {
+    setExternalAdapterState(adapter);
+    window.dispatchEvent(new CustomEvent('knowtree:adapter', { detail: { label: adapter?.label ?? null } }));
+  }, []);
+
+  // 快速切换：按预设 id 取回已记忆的密钥，一键组装配置。
+  // 返回 false 表示该服务商还没配过密钥，调用方应提示去设置页。
+  const applyPreset = useCallback(
+    (presetId: string): boolean => {
+      const preset = PROVIDER_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return false;
+      const key = recallLlmKey(preset.baseUrl);
+      if (!key) return false;
+      const config = { baseUrl: preset.baseUrl, apiKey: key, model: preset.model };
+      updateLlmConfig(config);
+      setActivePresetId(presetId);
+      return true;
+    },
+    [updateLlmConfig],
+  );
 
   const value: StoreValue = {
     courseId,
@@ -363,13 +410,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setEngineMode,
     llmConfig,
     updateLlmConfig,
-    engineLabel:
-      engineMode === 'remote' && llmConfig
+    engineLabel: externalAdapter
+      ? externalAdapter.label
+      : engineMode === 'remote' && llmConfig
         ? `远程模型 · ${llmConfig.model}`
         : '内置演示数据',
+    externalAdapterLabel: externalAdapter?.label ?? null,
+    setExternalAdapter,
+    activePresetId,
+    applyPreset,
     demoCases: demoCasesFor(courseId),
     resetMastery: () => setMastery(demoMasteryFor(courseId)),
   };
+
+  // 用 ref 跟踪最新 value，挂载全局插件接口 window.KnowTree。
+  // 外部容器（如 WorkBuddy）通过它注入模型调用器、读学情、触发诊断。
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  useEffect(() => {
+    mountKnowTreeApi(() => valueRef.current);
+  }, []);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

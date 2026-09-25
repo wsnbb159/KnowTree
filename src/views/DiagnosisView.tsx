@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '@/app/store';
 import { RichText } from '@/components/RichText';
 import { Card, CardTitle, ChainFlow, Chip, EmptyHint } from '@/components/ui';
+import { ModelSwitcher } from '@/views/ModelSwitcher';
 import { dependentClosure } from '@/domain/knowledge-tree';
 import { ERROR_CAUSE_HINT, ERROR_CAUSE_LABEL } from '@/domain/types';
 import { findDemoCase } from '@/fixtures/demo-cases';
@@ -22,7 +23,13 @@ const EVIDENCE_KIND_LABEL: Record<string, string> = {
 
 const GENERIC_SUGGESTIONS = ['这道题最关键的一步是什么？', '我以后怎么避免再犯？'];
 
-export function DiagnosisView({ onGoCapture }: { onGoCapture: () => void }) {
+export function DiagnosisView({
+  onGoCapture,
+  onNavigate,
+}: {
+  onGoCapture: () => void;
+  onNavigate: (tab: string) => void;
+}) {
   const { activeDiagnosis, index, masteryValues, reviews, addToNotebook, askFollowup, recordVariantResult } =
     useStore();
 
@@ -72,6 +79,7 @@ export function DiagnosisView({ onGoCapture }: { onGoCapture: () => void }) {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <ModelSwitcher onGoSettings={() => onNavigate('settings')} />
       {/* 结论横幅 */}
       <div className="animate-fade-up rounded-card border border-brand-200 bg-brand-50 px-5 py-4">
         <div className="flex flex-wrap items-center gap-2">

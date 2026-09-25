@@ -150,7 +150,9 @@ function Shell() {
         ) : null}
 
         {tab === 'capture' ? <CapturePanel onNavigate={navigate} /> : null}
-        {tab === 'diagnosis' ? <DiagnosisView onGoCapture={() => setTab('capture')} /> : null}
+        {tab === 'diagnosis' ? (
+          <DiagnosisView onGoCapture={() => setTab('capture')} onNavigate={navigate} />
+        ) : null}
         {tab === 'tree' ? <TreeView /> : null}
         {tab === 'profile' ? <ProfileView onNavigate={navigate} /> : null}
         {tab === 'notebook' ? <NotebookView onNavigate={navigate} /> : null}

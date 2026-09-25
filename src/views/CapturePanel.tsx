@@ -18,6 +18,7 @@ import { STAGE_LABEL, type DiagnosisStage } from '@/domain/diagnosis/engine';
 import { ERROR_CAUSE_LABEL } from '@/domain/types';
 import { looksLikePdf, pdfToPageImages, prepareForModel, readAsDataUrl } from '@/utils/image';
 import { Card, CardTitle, Chip } from '@/components/ui';
+import { ModelSwitcher } from '@/views/ModelSwitcher';
 
 const STAGE_ORDER: DiagnosisStage[] = ['reading', 'locating', 'attributing', 'planning'];
 
@@ -129,6 +130,7 @@ export function CapturePanel({ onNavigate }: { onNavigate: (tab: string) => void
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
+      <ModelSwitcher onGoSettings={() => onNavigate('settings')} />
       {/* 拍题区 */}
       <Card padded={false} className="overflow-hidden">
         <div
