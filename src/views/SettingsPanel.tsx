@@ -14,6 +14,7 @@ import { useStore } from '@/app/store';
 import {
   createOpenAiCompatibleProvider,
   LOCAL_PLACEHOLDER_KEY,
+  orderedPresets,
   PROVIDER_PRESETS,
   type ProviderPreset,
 } from '@/services/llm/openai-compatible';
@@ -144,7 +145,7 @@ export function SettingsPanel() {
         />
 
         <div className="mb-4 grid gap-2 sm:grid-cols-2">
-          {PROVIDER_PRESETS.map((preset) => {
+          {orderedPresets().map((preset) => {
             const selected = preset.id === presetId;
             return (
               <button
@@ -154,12 +155,19 @@ export function SettingsPanel() {
                 className={`rounded-lg border p-3 text-left transition ${
                   selected
                     ? 'border-brand-400 bg-brand-50'
-                    : 'border-[var(--line)] bg-white hover:border-brand-200'
+                    : preset.recommended
+                      ? 'border-brand-200 bg-white hover:border-brand-300'
+                      : 'border-[var(--line)] bg-white hover:border-brand-200'
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[13px] font-medium text-ink-900">{preset.label}</span>
                   <span className="flex shrink-0 gap-1">
+                    {preset.recommended ? (
+                      <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11px] text-white">
+                        推荐
+                      </span>
+                    ) : null}
                     {preset.free ? (
                       <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[11px] text-brand-800">
                         免费

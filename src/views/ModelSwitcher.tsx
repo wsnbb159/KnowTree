@@ -7,7 +7,7 @@
 
 import { useMemo } from 'react';
 import { useStore } from '@/app/store';
-import { PROVIDER_PRESETS } from '@/services/llm/openai-compatible';
+import { orderedPresets } from '@/services/llm/openai-compatible';
 import { loadLlmKeyMemory } from '@/services/storage/repository';
 
 export function ModelSwitcher({ onGoSettings }: { onGoSettings: () => void }) {
@@ -27,14 +27,19 @@ export function ModelSwitcher({ onGoSettings }: { onGoSettings: () => void }) {
     );
   }
 
-  const configured = PROVIDER_PRESETS.filter((p) => p.id !== 'custom' && keyMemory[p.baseUrl]);
+  // 与设置页共用同一份顺序（推荐项置顶），避免两处排序不一致
+  const presets = orderedPresets().filter((p) => p.id !== 'custom');
+  // 本地服务（noKey）没有密钥可记，一律视为可用 —— 否则会被误判成「没配过」而置灰
+  const isReady = (p: { baseUrl: string; noKey?: boolean }) =>
+    p.noKey === true || !!keyMemory[p.baseUrl];
+  const configured = presets.filter(isReady);
   const hasAny = configured.length > 0;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="text-[11px] text-ink-500">模型：</span>
-      {PROVIDER_PRESETS.filter((p) => p.id !== 'custom').map((preset) => {
-        const ready = !!keyMemory[preset.baseUrl];
+      {presets.map((preset) => {
+        const ready = isReady(preset);
         const active = preset.id === activePresetId;
         return (
           <button

@@ -137,10 +137,27 @@ export interface ProviderPreset {
    * 界面据此隐藏密钥输入框，用户不必理解这个细节。
    */
   noKey?: boolean;
+  /**
+   * 推荐项：界面上置顶并加「推荐」徽章。
+   * 只给「免费 + 支持识图 + 实测可浏览器直连」三者同时成立的服务商 ——
+   * 这是能跑通完整拍题链路的最低成本组合，其余都要在某一项上妥协。
+   */
+  recommended?: boolean;
 }
 
 /** 本地服务的占位密钥。本地网关不看它，但协议要求它非空 */
 export const LOCAL_PLACEHOLDER_KEY = 'local';
+
+/**
+ * 界面使用的预设顺序：推荐项置顶。
+ * 做成函数而不是在数组里手排，是为了让设置页与快速切换按钮共用同一份顺序 ——
+ * 两处各自排序迟早会不一致。
+ */
+export function orderedPresets(): ProviderPreset[] {
+  return [...PROVIDER_PRESETS].sort(
+    (a, b) => (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0),
+  );
+}
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
@@ -194,8 +211,9 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     model: 'glm-4v-flash',
     supportsVision: true,
     free: true,
-    freeTier: 'glm-4v-flash 官方永久免费，且支持识图',
+    freeTier: 'glm-4v-flash 官方永久免费且支持识图；新用户另赠 2000 万 tokens 体验包',
     keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys',
+    recommended: true,
   },
   {
     id: 'qwen',
