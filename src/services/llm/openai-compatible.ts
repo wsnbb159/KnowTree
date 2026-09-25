@@ -72,8 +72,16 @@ export function createOpenAiCompatibleProvider(config: RemoteLlmConfig): LlmProv
           body: JSON.stringify(body),
         });
       } catch (error) {
+        /*
+         * 本地服务（Ollama / LM Studio）与云端失败的原因完全不同：
+         * 云端多半是网络或地址写错，本地几乎总是「服务没启动」或「没放行跨域」。
+         * 给一句同样的话会让人去查网络，白费时间 —— 分开说。
+         */
+        const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])/i.test(config.baseUrl);
         throw new LlmError(
-          '无法连接模型服务，请检查网络或接口地址',
+          isLocal
+            ? '连不上本机模型服务：先确认它已经启动（Ollama 要 ollama serve；LM Studio 要开 Local Server），并允许浏览器跨域访问'
+            : '无法连接模型服务，请检查网络或接口地址',
           error instanceof Error ? error.message : String(error),
         );
       }
