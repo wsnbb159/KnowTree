@@ -43,12 +43,23 @@ export interface MarketRegistry {
 const REGISTRY_URL =
   'https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@main/plugins/registry.json';
 
+/*
+ * 两处引用用了不同的版本策略，这是刻意的：
+ *
+ * - 清单（本文件的 REGISTRY_URL）用 @main：它必须能**更新** —— 加新插件时
+ *   不该需要改代码重新部署。分支上的缓存延迟是可接受的，因为下面有内置兜底。
+ * - 插件脚本（FALLBACK_REGISTRY 与 registry.json 里的 script）钉**完整 commit sha**：
+ *   它必须**不可变**。实测把 @main 用在脚本上，改了插件之后 CDN 还给旧版本，
+ *   用户点安装装到的是过时代码 —— 而且不报错，最难查。
+ *
+ * 每次改动 plugins/*.js 之后，跑 node scripts/pin-plugins.mjs 重新钉一次。
+ */
+
 /**
  * 内置兜底清单。
  * CDN 可能拉不到（网络、缓存延迟、离线演示），此时广场不能变成一片空白 ——
  * 内置这份清单保证「插件」按钮点开永远有东西可看。
- * 注意：这里的地址必须与仓库里的 registry.json 保持一致，
- * 两处事实对不上是个隐患，所以只保留同一条 jsDelivr 地址。
+ * 注意：这里的地址必须与仓库里的 registry.json 保持一致（由 pin-plugins.mjs 一起钉）。
  */
 const FALLBACK_REGISTRY: MarketRegistry = {
   version: 1,
@@ -65,7 +76,7 @@ const FALLBACK_REGISTRY: MarketRegistry = {
       chapters: 4,
       nodes: 15,
       hasDemo: true,
-      script: 'https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@main/plugins/physics.js',
+      script: 'https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@286de86e9bfe0cf343a5208368ad4dcae5ba2d7e/plugins/physics.js',
       source: 'https://github.com/wsnbb159/KnowTree/blob/main/plugins/physics.js',
     },
   ],

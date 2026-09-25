@@ -14,7 +14,7 @@
       "chapters": 4,
       "nodes": 15,
       "hasDemo": true,
-      "script": "https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@main/plugins/physics.js",
+      "script": "https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@286de86e9bfe0cf343a5208368ad4dcae5ba2d7e/plugins/physics.js",
       "source": "https://github.com/wsnbb159/KnowTree/blob/main/plugins/physics.js"
     }
   ]
