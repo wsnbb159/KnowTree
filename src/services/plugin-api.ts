@@ -13,7 +13,8 @@
  * 安全：只暴露能力，不暴露 API Key。
  */
 
-import type { LlmProvider, LlmRequest } from '@/services/llm/types';
+import { LlmError } from '@/services/llm/types';
+import type { LlmMessage, LlmProvider, LlmRequest, LlmTask } from '@/services/llm/types';
 import {
   registerPluginCourse,
   unregisterPluginCourse,
@@ -21,10 +22,74 @@ import {
   type CoursePluginInput,
 } from '@/data/courses';
 
+/**
+ * 对外的任务标记。
+ *
+ * 内部流水线叫 analyze / explain / variants / followup，这套名字对插件作者是黑话 ——
+ * 看到 `analyze` 他不知道自己该干什么、该返回什么。
+ * 因此对外收敛成四个通用动词，并显式附带期望的返回格式：
+ *
+ *   parse 读题 把题目与学生解答读成结构化数据
+ *   teach 讲解 分层讲解：引导提示 → 步骤详解 → 完整答案
+ *   quiz  出题 围绕指定知识点出 3 道变式复测题
+ *   chat  追问 锚定在归因结论上的多轮追问
+ *
+ * 注意 `teach` 也要返回 JSON（讲解是结构化的三级内容，答案放在最后一级），
+ * 里面的正文字段才是 Markdown —— 只有 `chat` 直接返回 Markdown。
+ */
+export type PluginTask = 'parse' | 'teach' | 'quiz' | 'chat';
+
+/** 期望的返回格式。显式给出，比让插件作者去读文档猜要可靠 */
+export type PluginResponseFormat = 'json' | 'text';
+
+export interface PluginLlmRequest {
+  task: PluginTask;
+  /**
+   * 这次该返回什么：
+   *   json = 必须返回可解析的 JSON 字符串（允许 ``` 围栏，知树会稳健抽取）
+   *   text = Markdown 文本
+   */
+  responseFormat: PluginResponseFormat;
+  messages: LlmMessage[];
+  temperature?: number;
+  maxTokens?: number;
+}
+
 /** 外部注入的模型调用器 —— 只需要 complete 一个方法 */
 export interface KnowTreeAdapter {
-  complete: (request: LlmRequest) => Promise<string>;
+  complete: (request: PluginLlmRequest) => Promise<string>;
   label?: string;
+}
+
+const TASK_TO_PLUGIN: Record<LlmTask, PluginTask> = {
+  analyze: 'parse',
+  explain: 'teach',
+  variants: 'quiz',
+  followup: 'chat',
+};
+
+/**
+ * 把内部请求翻译成插件看得懂的请求。
+ * 内部依旧用流水线术语（改它们会牵动提示词与演示样例），
+ * 只在插件这一层翻译一次 —— 边界上翻译的代价远小于全局改名。
+ */
+function toPluginRequest(request: LlmRequest): PluginLlmRequest {
+  if (!request.task) {
+    throw new LlmError('插件适配器收到缺少 task 的请求，无法确定该做什么');
+  }
+  return {
+    task: TASK_TO_PLUGIN[request.task],
+    /*
+     * 期望格式直接取自内部请求自带的 json 标记，不另立一张映射表。
+     * 这个选择是踩出来的：最初按直觉把 teach 写成 text（"讲解当然是 Markdown"），
+     * 但讲解其实是结构化的三级内容，内部 json: true，真按 Markdown 返回会解析失败。
+     * 两处事实迟早会对不上 —— 所以让提示词做唯一事实来源。
+     */
+    responseFormat: request.json === false ? 'text' : 'json',
+    messages: request.messages,
+    ...(request.temperature !== undefined ? { temperature: request.temperature } : {}),
+    ...(request.maxTokens !== undefined ? { maxTokens: request.maxTokens } : {}),
+  };
 }
 
 /** 知树给插件用的最小 store 视图（避免循环依赖，不引 StoreValue） */
@@ -79,7 +144,7 @@ export function mountKnowTreeApi(getStore: () => KnowTreeStoreView) {
         label: adapter.label ?? '外部模型',
         kind: 'remote',
         supportsVision: true,
-        complete: (req: LlmRequest) => adapter.complete(req),
+        complete: (req: LlmRequest) => adapter.complete(toPluginRequest(req)),
       };
       store.setExternalAdapter(provider);
     },

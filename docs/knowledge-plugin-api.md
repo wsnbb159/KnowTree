@@ -64,17 +64,42 @@ window.KnowTree.registerCourse({
 | `setLLMAdapter` | `(adapter: { complete(req): Promise<string>; label?: string }) => void` | 注入自定义模型调用器。**优先级最高**，覆盖设置页配置与演示模式。 |
 | `clearLLMAdapter` | `() => void` | 撤销注入，回落到设置页配置或演示模式。 |
 
-`adapter.complete` 收到的是标准 OpenAI 消息结构：
+`adapter.complete` 收到的是标准 OpenAI 消息结构，外加一个**中立的 `task` 标记**：
 
 ```ts
-{
-  task: 'analyze' | 'explain' | 'variants' | 'followup',
-  messages: [{ role: 'system' | 'user' | 'assistant', content: string | ContentPart[] }],
+interface PluginLlmRequest {
+  task: 'parse' | 'teach' | 'quiz' | 'chat';
+  responseFormat: 'json' | 'text';   // 这次该返回什么，不用猜
+  messages: { role: 'system' | 'user' | 'assistant'; content: string | ContentPart[] }[];
+  temperature?: number;
+  maxTokens?: number;
 }
 ```
 
-其中 `analyze` / `variants` 阶段的要求是**返回 JSON 字符串**（可带 ``` 围栏），
-`explain` / `followup` 返回 Markdown 文本。`task` 字段告诉你要执行的是哪一步。
+四个任务的含义：
+
+| `task` | `responseFormat` | 你要做的事 | 对应诊断流水线的哪一步 |
+| --- | --- | --- | --- |
+| `parse` | `json` | 把题目图片与学生的手写解答读成结构化数据（题干、公式、逐步对错、候选考点） | 第 2 步 题目理解 |
+| `teach` | `json` | 分层讲解：引导提示 → 步骤详解 → 完整答案，答案必须在最后一级才出现 | 第 5 步 讲解 |
+| `quiz` | `json` | 围绕指定知识点出 3 道变式复测题，每题带检查点 | 第 6 步 复测 |
+| `chat` | `text` | 回答追问，直接返回 Markdown。上下文已锚定在归因结论上，不许跑题 | 追问 |
+
+三点说明：
+
+- **`task` 用通用动词，而不是流水线术语。** 内部叫 `analyze` / `explain` / `variants` / `followup`，
+  这套名字对插件作者是黑话 —— 看到 `analyze` 你不知道该干什么、该返回什么。
+  所以对外收敛成 `parse` / `teach` / `quiz` / `chat`，这个翻译只在插件边界上做一次。
+- **`responseFormat` 由知树显式给出，请以它为准。** 允许带 ``` 围栏，知树会稳健抽取。
+  与其让你去翻文档，不如每个请求都带上这个字段。
+- **`teach` 返回的是 JSON，不是 Markdown。** 讲解是结构化的三级内容（hint / steps / answer），
+  答案必须落在最后一级，所以整包是 JSON；**里面的正文字段才是 Markdown**。
+  只有 `chat` 直接返回 Markdown 文本。
+  （这条是被实测纠出来的：最初文档按直觉写成「讲解当然是 Markdown」，实测直接解析失败。）
+
+**最重要的边界**：`parse` 只负责**读懂题目**并指出学生的哪一步错了；
+**「这道题卡在哪个知识点」永远由知树沿依赖图算出，模型说了不算。**
+这是本作品的核心主张 —— 换掉模型，产品的判断力不下降。
 
 ### 2.3 状态读取与触发
 
