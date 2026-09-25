@@ -14,6 +14,7 @@ import { ProfileView } from '@/views/ProfileView';
 import { NotebookView } from '@/views/NotebookView';
 import { TeacherView } from '@/views/TeacherView';
 import { SettingsPanel } from '@/views/SettingsPanel';
+import { PluginPanel } from '@/views/PluginPanel';
 
 export default function App() {
   return (
@@ -48,11 +49,38 @@ function Shell() {
     stats,
   } = useStore();
   const [tab, setTab] = useState<TabId>('capture');
+  const [pluginOpen, setPluginOpen] = useState(false);
+  const [pluginCount, setPluginCount] = useState(0);
 
   /* 新诊断完成 → 自动切到报告页，学生的视线跟着流程走 */
   useEffect(() => {
     if (activeDiagnosis) setTab('diagnosis');
   }, [activeDiagnosis]);
+
+  /* 插件数：只数插件课程，内置四门课不算 —— 徽标要表示「装了几个模块」 */
+  useEffect(() => {
+    const builtin = new Set([
+      'data-structure',
+      'calculus',
+      'linear-algebra',
+      'probability',
+    ]);
+    const sync = () => {
+      const api = (window as unknown as {
+        KnowTree?: { listCourses(): { id: string }[] };
+      }).KnowTree;
+      setPluginCount(
+        api ? api.listCourses().filter((c) => !builtin.has(c.id)).length : 0,
+      );
+    };
+    sync();
+    window.addEventListener('knowtree:ready', sync);
+    window.addEventListener('knowtree:course', sync);
+    return () => {
+      window.removeEventListener('knowtree:ready', sync);
+      window.removeEventListener('knowtree:course', sync);
+    };
+  }, []);
 
   const navigate = (next: string) => setTab(next as TabId);
 
@@ -73,6 +101,20 @@ function Shell() {
           </div>
 
           <div className="ml-auto flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setPluginOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--line-strong)] bg-white px-2.5 py-1.5 text-[12.5px] text-ink-700 outline-none transition hover:border-brand-400 hover:text-brand-700"
+              title="安装知识模块插件（物理、英语等）"
+            >
+              <PluginIcon />
+              插件
+              {pluginCount > 0 ? (
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-medium text-white">
+                  {pluginCount}
+                </span>
+              ) : null}
+            </button>
             <select
               value={courseId}
               onChange={(event) => setCourseId(event.target.value as typeof courseId)}
@@ -142,6 +184,16 @@ function Shell() {
         </nav>
       </header>
 
+      <PluginPanel
+        open={pluginOpen}
+        onClose={() => setPluginOpen(false)}
+        onInstalled={(courseId) => {
+          setPluginOpen(false);
+          setCourseId(courseId);
+          setTab('capture');
+        }}
+      />
+
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
         {error ? (
           <div className="mb-5 rounded-card border border-[#F7C1C1] bg-[#FCEBEB] px-4 py-3 text-[13px] text-[#A32D2D]">
@@ -185,6 +237,20 @@ function KnowTreeLogo() {
         fill="#5DCAA5"
       />
       <rect x="19" y="26" width="2" height="6.5" rx="1" fill="#E1F5EE" />
+    </svg>
+  );
+}
+
+/** 插件图标：一块拼图缺口 —— 「把外部模块拼进知识树」 */
+function PluginIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <path
+        d="M6.2 1.8a1.6 1.6 0 0 1 2.3 1.4v.6h2.1a1.2 1.2 0 0 1 1.2 1.2v2.1h.6a1.6 1.6 0 0 1 0 3.2h-.6v2.1a1.2 1.2 0 0 1-1.2 1.2H8.5v-.6a1.6 1.6 0 0 0-3.2 0v.6H4.2A1.2 1.2 0 0 1 3 12.5V3.8a1.2 1.2 0 0 1 1.2-1.2h2z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }

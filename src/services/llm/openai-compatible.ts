@@ -123,7 +123,16 @@ export interface ProviderPreset {
   keyUrl: string;
   /** 补充说明（可选） */
   note?: string;
+  /**
+   * 本地服务：不需要密钥。
+   * 协议上仍要带 Authorization 头，所以内部填一个占位串 ——
+   * 界面据此隐藏密钥输入框，用户不必理解这个细节。
+   */
+  noKey?: boolean;
 }
+
+/** 本地服务的占位密钥。本地网关不看它，但协议要求它非空 */
+export const LOCAL_PLACEHOLDER_KEY = 'local';
 
 export const PROVIDER_PRESETS: ProviderPreset[] = [
   {
@@ -189,6 +198,32 @@ export const PROVIDER_PRESETS: ProviderPreset[] = [
     free: true,
     freeTier: '新用户每个模型有限时免费额度',
     keyUrl: 'https://bailian.console.aliyun.com/?apiKey=1#/api-key',
+  },
+  {
+    id: 'ollama',
+    label: 'Ollama（本机 · 免密钥）',
+    baseUrl: 'http://localhost:11434/v1',
+    model: 'qwen2.5:7b',
+    supportsVision: false,
+    free: true,
+    freeTier: '完全免费：模型跑在你自己的电脑上，不需要任何 API Key',
+    keyUrl: 'https://ollama.com/download',
+    noKey: true,
+    note:
+      '需先装 Ollama 并 ollama pull 一个模型。浏览器跨域要在环境变量里设 OLLAMA_ORIGINS=* 后重启；要识图请换 llava 等视觉模型。',
+  },
+  {
+    id: 'lmstudio',
+    label: 'LM Studio（本机 · 免密钥）',
+    baseUrl: 'http://localhost:1234/v1',
+    model: 'local-model',
+    supportsVision: false,
+    free: true,
+    freeTier: '完全免费：本地起一个 OpenAI 兼容服务，不需要任何 API Key',
+    keyUrl: 'https://lmstudio.ai/',
+    noKey: true,
+    note:
+      '需在 LM Studio 里加载模型并开启 Local Server（默认 1234 端口）。model 名填控制台里显示的那个，常是 local-model。',
   },
   {
     id: 'custom',

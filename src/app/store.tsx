@@ -32,7 +32,11 @@ import {
   type DiagnosisStage,
 } from '@/domain/diagnosis/engine';
 import { createDemoProvider } from '@/services/llm/demo';
-import { createOpenAiCompatibleProvider, PROVIDER_PRESETS } from '@/services/llm/openai-compatible';
+import {
+  createOpenAiCompatibleProvider,
+  LOCAL_PLACEHOLDER_KEY,
+  PROVIDER_PRESETS,
+} from '@/services/llm/openai-compatible';
 import { recallLlmKey } from '@/services/storage/repository';
 import { buildFollowupMessages } from '@/services/llm/prompt';
 import type { LlmProvider, RemoteLlmConfig } from '@/services/llm/types';
@@ -402,11 +406,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // 快速切换：按预设 id 取回已记忆的密钥，一键组装配置。
   // 返回 false 表示该服务商还没配过密钥，调用方应提示去设置页。
+  // 本地服务（Ollama / LM Studio）没有密钥可记，用占位串 —— 否则会被误判成「没配过」。
   const applyPreset = useCallback(
     (presetId: string): boolean => {
       const preset = PROVIDER_PRESETS.find((p) => p.id === presetId);
       if (!preset) return false;
-      const key = recallLlmKey(preset.baseUrl);
+      const key = preset.noKey ? LOCAL_PLACEHOLDER_KEY : recallLlmKey(preset.baseUrl);
       if (!key) return false;
       const config = { baseUrl: preset.baseUrl, apiKey: key, model: preset.model };
       updateLlmConfig(config);

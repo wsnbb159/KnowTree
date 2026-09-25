@@ -13,6 +13,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { useStore } from '@/app/store';
 import {
   createOpenAiCompatibleProvider,
+  LOCAL_PLACEHOLDER_KEY,
   PROVIDER_PRESETS,
   type ProviderPreset,
 } from '@/services/llm/openai-compatible';
@@ -42,13 +43,21 @@ export function SettingsPanel() {
   const activePreset = PROVIDER_PRESETS.find((preset) => preset.id === presetId) ?? null;
   const visionBlocked =
     activePreset !== null && !activePreset.supportsVision && baseUrl.trim() === activePreset.baseUrl;
+  // 本地服务不需要密钥：协议上占位即可，界面不要求用户填
+  const noKey = activePreset?.noKey === true;
 
-  const formReady = baseUrl.trim() !== '' && apiKey.trim() !== '' && model.trim() !== '';
+  const formReady = baseUrl.trim() !== '' && model.trim() !== '' && (noKey || apiKey.trim() !== '');
 
   const selectPreset = (preset: ProviderPreset) => {
     setPresetId(preset.id);
     setBaseUrl(preset.baseUrl);
     setModel(preset.model);
+    if (preset.noKey) {
+      setApiKey(LOCAL_PLACEHOLDER_KEY);
+      setEditing(false);
+      setTest({ status: 'idle' });
+      return;
+    }
     // 切回配过的服务商时，密钥自动回填并以掩码显示（不可再查看完整）；没配过则进入编辑态。
     const recalled = recallLlmKey(preset.baseUrl);
     setApiKey(recalled);
@@ -182,6 +191,15 @@ export function SettingsPanel() {
               className={inputClass}
             />
           </Field>
+          {noKey ? (
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-sunken)] px-3 py-2.5">
+              <span className="kt-label mb-1 block">API Key</span>
+              <p className="text-[12.5px] leading-relaxed text-ink-600">
+                本机服务不需要密钥。协议要求带 Authorization 头，知树会自动填一个占位串 ——
+                你不需要做任何事。
+              </p>
+            </div>
+          ) : (
           <Field label="API Key">
             <div className="flex gap-2">
               <input
@@ -227,10 +245,11 @@ export function SettingsPanel() {
                 rel="noreferrer"
                 className="mt-1.5 inline-block text-[12px] text-brand-700 underline underline-offset-2"
               >
-                去{activePreset.label}控制台免费申请密钥 ↗
+                {noKey ? `打开${activePreset.label.replace(/（.*?）/g, '')}官网 ↗` : `去${activePreset.label}控制台免费申请密钥 ↗`}
               </a>
             ) : null}
           </Field>
+          )}
           <Field label="模型名称">
             <input
               value={model}
@@ -391,7 +410,8 @@ function PluginCard() {
       <p className="mt-3 text-[12px] leading-relaxed text-ink-500">
         插件课程的数据只存在内存，刷新页面后需由容器重新注入；诊断记录、掌握度与错题本不受影响。
         接入规范见仓库 <code className="text-[11.5px]">docs/knowledge-plugin-api.md</code>，
-        可运行样例见 <code className="text-[11.5px]">examples/plugin-physics.js</code>。
+        可运行样例见 <code className="text-[11.5px]">plugins/physics.js</code>
+        （也可在顶部的「插件」按钮里从插件广场一键安装）。
       </p>
     </Card>
   );

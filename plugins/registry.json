@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-25",
+  "note": "知树知识模块插件广场清单。页面通过 jsDelivr 拉取本文件（CDN 带 CORS 头，纯前端可直接读）。新增插件 = 在本仓库 plugins/ 下放一个自注册脚本，并在这里加一条。",
+  "plugins": [
+    {
+      "id": "physics-mechanics",
+      "name": "大学物理 · 力学",
+      "courseId": "physics-mechanics",
+      "author": "知树团队",
+      "version": "1.0.0",
+      "audience": "理工科 · 大一上",
+      "description": "4 章 15 个知识点。演示样例是一道斜面上的连接体题 —— 表面考牛顿第二定律，实际卡在受力分析漏掉摩擦力。",
+      "chapters": 4,
+      "nodes": 15,
+      "hasDemo": true,
+      "script": "https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@main/plugins/physics.js",
+      "source": "https://github.com/wsnbb159/KnowTree/blob/main/plugins/physics.js"
+    }
+  ]
+}

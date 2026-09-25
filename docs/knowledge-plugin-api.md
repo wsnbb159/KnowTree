@@ -40,8 +40,9 @@ window.KnowTree.registerCourse({
 返回 `{ ok: true }` 即接入成功，课程下拉菜单里立刻出现「英语语法」。
 返回 `{ ok: false, error: '...' }` 则会告诉你**具体哪个节点、缺了什么** —— 见第五节。
 
-完整的可运行样例见仓库里的 [`examples/plugin-physics.js`](../examples/plugin-physics.js)，
+完整的可运行样例见仓库里的 [`plugins/physics.js`](../plugins/physics.js)，
 它把《大学物理·力学》4 章 15 个知识点 + 1 道演示样例整套接了进来。
+这个插件同时也挂在**插件广场**上，可以在页面顶部的「插件」按钮里一键安装。
 
 ---
 
