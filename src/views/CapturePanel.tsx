@@ -211,16 +211,18 @@ export function CapturePanel({ onNavigate }: { onNavigate: (tab: string) => void
             </button>
           </div>
           <div className="mt-3.5 flex flex-wrap gap-2.5">
-            <button
-              type="button"
-              className="kt-btn kt-btn-primary"
-              onClick={() => {
-                setPendingUpload(null);
-                void runFromDemoCase(demoCases[0].id);
-              }}
-            >
-              先回放内置样例，看看效果
-            </button>
+            {demoCases.length > 0 ? (
+              <button
+                type="button"
+                className="kt-btn kt-btn-primary"
+                onClick={() => {
+                  setPendingUpload(null);
+                  void runFromDemoCase(demoCases[0].id);
+                }}
+              >
+                先回放内置样例，看看效果
+              </button>
+            ) : null}
             <button
               type="button"
               className="kt-btn"
@@ -284,7 +286,22 @@ export function CapturePanel({ onNavigate }: { onNavigate: (tab: string) => void
         </Card>
       ) : null}
 
-      {/* 内置样例 */}
+      {/* 内置样例（插件课程可能没有自带样例，此时不显示这一块） */}
+      {demoCases.length === 0 ? (
+        <Card>
+          <CardTitle
+            title={`《${courseName}》还没有内置样例`}
+            hint="这门课由知识模块插件提供，只带了知识树。接上模型后即可对它拍照诊断。"
+          />
+          <button
+            type="button"
+            className="kt-btn"
+            onClick={() => onNavigate('settings')}
+          >
+            去配置模型 →
+          </button>
+        </Card>
+      ) : (
       <Card>
         <CardTitle
           title="手边没有题？用内置样例走一遍"
@@ -319,6 +336,7 @@ export function CapturePanel({ onNavigate }: { onNavigate: (tab: string) => void
           ))}
         </div>
       </Card>
+      )}
 
       {/* 最近诊断 */}
       {diagnoses.length > 0 ? (

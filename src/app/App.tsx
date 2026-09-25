@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { StoreProvider, useStore } from './store';
-import { courses, getTree } from '@/data/courses';
+import { getTree, getAllCourses } from '@/data/courses';
 import { CapturePanel } from '@/views/CapturePanel';
 import { DiagnosisView } from '@/views/DiagnosisView';
 import { TreeView } from '@/views/TreeView';
@@ -79,7 +79,7 @@ function Shell() {
               className="rounded-lg border border-[var(--line-strong)] bg-white px-2.5 py-1.5 text-[12.5px] text-ink-700 outline-none transition focus:border-brand-400"
               aria-label="选择课程"
             >
-              {courses.map((course) => (
+              {getAllCourses().map((course) => (
                 <option
                   key={course.id}
                   value={course.id}

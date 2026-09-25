@@ -18,7 +18,15 @@ import {
 } from 'react';
 import { groupGapsByOrigin, indexTree, masteryMap, treeStats } from '@/domain/knowledge-tree';
 import type { CourseId, Diagnosis, KnowledgeTree, MasteryRecord } from '@/domain/types';
-import { getCourse, getTree, readyCourses } from '@/data/courses';
+import {
+  baselineMastery,
+  getCourse,
+  getPluginDemoCases,
+  getPluginMastery,
+  getTree,
+  isPluginCourse,
+  readyCourses,
+} from '@/data/courses';
 import {
   runDiagnosis,
   type DiagnosisStage,
@@ -58,6 +66,10 @@ import { calculusMastery } from '@/fixtures/demo-mastery-calculus';
 /**
  * 演示样例与学情画像都必须按课程取，否则切到《高数》后会拿到《数据结构》的
  * 样例和画像 —— 归因会给出荒唐结论，而且不报错。这类错误必须在源头收口。
+ *
+ * 插件课程（物理、英语等）同理：绝不能回退到内置课程的样例/画像。
+ * 插件没自带样例就是没有（演示模式下只能接真实模型）；
+ * 插件没自带画像就用中性基线，避免空画像把归因一路推到根节点。
  */
 const DEMO_CASES_BY_COURSE: Partial<Record<CourseId, typeof demoCases>> = {
   'data-structure': demoCases,
@@ -70,10 +82,19 @@ const DEMO_MASTERY_BY_COURSE: Partial<Record<CourseId, MasteryRecord[]>> = {
 };
 
 export function demoCasesFor(courseId: CourseId): typeof demoCases {
+  const fromPlugin = getPluginDemoCases(courseId);
+  if (fromPlugin) return fromPlugin;
+  if (isPluginCourse(courseId)) return [];
   return DEMO_CASES_BY_COURSE[courseId] ?? demoCases;
 }
 
 export function demoMasteryFor(courseId: CourseId): MasteryRecord[] {
+  const fromPlugin = getPluginMastery(courseId);
+  if (fromPlugin) return fromPlugin;
+  if (isPluginCourse(courseId)) {
+    const tree = getTree(courseId);
+    return tree ? baselineMastery(tree) : [];
+  }
   return DEMO_MASTERY_BY_COURSE[courseId] ?? demoMastery;
 }
 
@@ -171,6 +192,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const hit = PROVIDER_PRESETS.find((preset) => preset.baseUrl === llmConfig?.baseUrl);
     return hit?.id ?? null;
   });
+  // 插件课程注册后递增，触发课程下拉菜单重渲染。
+  const [pluginCourseVersion, setPluginCourseVersion] = useState(0);
   const [stage, setStage] = useState<DiagnosisStage | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +201,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const tree = useMemo(
     () => getTree(courseId) ?? getTree(FALLBACK_COURSE)!,
-    [courseId],
+    [courseId, pluginCourseVersion],
   );
   const index = useMemo(() => indexTree(tree), [tree]);
   const masteryValues = useMemo(() => masteryMap(mastery), [mastery]);
@@ -214,6 +237,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
       const courseCases = demoCasesFor(courseId);
       const demoCase = findDemoCaseIn(courseId, caseId) ?? courseCases[0];
+      if (!demoCase) {
+        // 插件课程没自带样例时，演示模式无内容可回放。
+        // 宁可明确报错，也不要拿别的课程的样例来冒充 —— 那会给出荒唐结论且不报错。
+        throw new Error(
+          `《${getCourse(courseId)?.name ?? courseId}》没有内置演示样例：请在「设置」里配置模型，或让该知识模块插件自带样例。`,
+        );
+      }
       return createDemoProvider(demoCase.bundle);
     },
     [courseId, engineMode, llmConfig, externalAdapter],
@@ -275,7 +305,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               const matched = diagnosis.demoCaseId
                 ? findDemoCaseIn(diagnosis.courseId, diagnosis.demoCaseId)
                 : undefined;
-              return createDemoProvider((matched ?? courseCases[0]).bundle);
+              const chosen = matched ?? courseCases[0];
+              if (!chosen) {
+                throw new Error('这门课没有内置演示样例，追问需要接入模型后才能用。');
+              }
+              return createDemoProvider(chosen.bundle);
             })();
 
       const targetName = index.byId.get(diagnosis.targetNodeId)?.name ?? diagnosis.targetNodeId;
@@ -293,7 +327,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const runFromImage = useCallback(
     async (target: RunTarget) => {
-      await run(target, demoCasesFor(courseId)[0].id);
+      await run(target, demoCasesFor(courseId)[0]?.id ?? '');
     },
     [courseId, run],
   );
@@ -424,11 +458,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   // 用 ref 跟踪最新 value，挂载全局插件接口 window.KnowTree。
-  // 外部容器（如 WorkBuddy）通过它注入模型调用器、读学情、触发诊断。
+  // 外部容器（如 WorkBuddy）通过它注入模型调用器、读学情、触发诊断、注册知识模块。
   const valueRef = useRef(value);
   valueRef.current = value;
   useEffect(() => {
     mountKnowTreeApi(() => valueRef.current);
+  }, []);
+  // 监听插件课程注册/注销事件，递增 version 触发重渲染
+  useEffect(() => {
+    const handler = (e: Event) => {
+      setPluginCourseVersion((v) => v + 1);
+      // 课程被注销后，当前选中的课程可能已不存在：此时必须切回内置课程，
+      // 否则界面会继续用内置 fallback 的树渲染，但页脚/标题仍写着那门插件课程 ——
+      // 看起来「正常」，实际上课程名与知识树对不上。
+      const courseId = (e as CustomEvent<{ courseId?: string }>).detail?.courseId;
+      if (courseId) {
+        setCourseIdState((current) => {
+          if (current !== courseId) return current;
+          const fallback = readyCourses[0]?.id ?? FALLBACK_COURSE;
+          saveActiveCourse(fallback);
+          return fallback;
+        });
+      }
+    };
+    window.addEventListener('knowtree:course', handler);
+    return () => window.removeEventListener('knowtree:course', handler);
   }, []);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

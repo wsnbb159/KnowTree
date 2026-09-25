@@ -5,11 +5,17 @@
  * 保持纯净是刻意的：诊断算法必须可以脱离界面被单独推理和测试。
  */
 
+/**
+ * 课程标识。前四个是内置课程；末尾的 `(string & {})` 保留了字面量补全，
+ * 同时允许插件课程（物理、英语等）用自己的 id 注册进来 ——
+ * 知识模块是运行时可插拔的，类型上就不能把它写死。
+ */
 export type CourseId =
   | 'data-structure'
   | 'calculus'
   | 'linear-algebra'
-  | 'probability';
+  | 'probability'
+  | (string & {});
 
 export interface Course {
   id: CourseId;

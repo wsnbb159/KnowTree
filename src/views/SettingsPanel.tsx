@@ -9,7 +9,7 @@
  * 不经过任何第三方 —— 本作品没有后端。
  */
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useStore } from '@/app/store';
 import {
   createOpenAiCompatibleProvider,
@@ -313,6 +313,8 @@ export function SettingsPanel() {
         </div>
       </Card>
 
+      <PluginCard />
+
       <Card>
         <CardTitle title="关于题目数据" />
         <p className="text-[13px] leading-relaxed text-ink-600">
@@ -322,6 +324,76 @@ export function SettingsPanel() {
         </p>
       </Card>
     </div>
+  );
+}
+
+/**
+ * 知识模块插件说明。
+ *
+ * 知树只内置了两门课，但归因引擎只依赖「知识树」这一种数据结构。
+ * 因此任何能被画成知识树的学科（物理、英语……）都能作为插件接入，
+ * 接入后立刻拥有同一套诊断能力。这里只是一个入口提示 ——
+ * 真正的注入由外部容器（LearnBuddy / WorkBuddy 的 skill）调 window.KnowTree.registerCourse 完成。
+ */
+function PluginCard() {
+  const [courses, setCourses] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    const sync = () => {
+      const api = (window as unknown as { KnowTree?: { listCourses(): { id: string; name: string }[] } })
+        .KnowTree;
+      if (!api) return;
+      setCourses(api.listCourses());
+    };
+    sync();
+    window.addEventListener('knowtree:ready', sync);
+    window.addEventListener('knowtree:course', sync);
+    return () => {
+      window.removeEventListener('knowtree:ready', sync);
+      window.removeEventListener('knowtree:course', sync);
+    };
+  }, []);
+
+  const builtin = new Set(['data-structure', 'calculus', 'linear-algebra', 'probability']);
+  const plugins = courses.filter((course) => !builtin.has(course.id));
+
+  return (
+    <Card>
+      <CardTitle
+        title="知识模块插件"
+        hint="知树只认识「知识树」这一种结构。任何能被画成知识树的学科，都能作为插件接入。"
+      />
+      <p className="text-[13px] leading-relaxed text-ink-600">
+        外部容器（如 LearnBuddy 的 skill）调用{' '}
+        <code className="rounded bg-[var(--surface-sunken)] px-1.5 py-0.5 text-[12px]">
+          window.KnowTree.registerCourse()
+        </code>{' '}
+        注入一门课程的知识树，课程下拉菜单里就会立刻出现它，并自动获得拍照诊断、卡点归因、
+        分层讲解、变式复测、错题本与教师端卡点热力图的完整能力 ——
+        归因引擎不认识物理或英语，它只认识依赖图。
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="kt-label">当前已接入</span>
+        {plugins.length === 0 ? (
+          <span className="text-[12.5px] text-ink-500">
+            暂无插件课程（内置两门课不走插件通道）
+          </span>
+        ) : (
+          plugins.map((course) => (
+            <Chip key={course.id} tone="brand">
+              {course.name}
+            </Chip>
+          ))
+        )}
+      </div>
+
+      <p className="mt-3 text-[12px] leading-relaxed text-ink-500">
+        插件课程的数据只存在内存，刷新页面后需由容器重新注入；诊断记录、掌握度与错题本不受影响。
+        接入规范见仓库 <code className="text-[11.5px]">docs/knowledge-plugin-api.md</code>，
+        可运行样例见 <code className="text-[11.5px]">examples/plugin-physics.js</code>。
+      </p>
+    </Card>
   );
 }
 

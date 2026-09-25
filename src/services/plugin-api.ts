@@ -1,16 +1,25 @@
 /**
  * 插件接口：把知树的能力暴露给外部容器。
  *
- * 典型场景：WorkBuddy 容器加载知树网页后，调用
- *   window.KnowTree.setLLMAdapter({ complete: async (req) => { ... } })
- * 注入一个用 WorkBuddy 平台模型的调用器，知树就用它调模型 ——
- * 等效于「以 WorkBuddy 为底层大模型」，而知树不需要知道 WorkBuddy 的 API 长什么样。
+ * 两个层面的插件：
  *
- * 安全：只暴露能力，不暴露 API Key（key 只存 localStorage，不经过此接口）。
- * 外部 adapter 收到的是结构化请求，它自己决定怎么转发。
+ * 1. 模型层 —— setLLMAdapter
+ *    WorkBuddy 容器注入一个 complete() 函数，知树用它调模型。
+ *
+ * 2. 知识模块层 —— registerCourse
+ *    外部注入一门课程的知识树（物理、英语等），知树自动出现在课程下拉菜单里，
+ *    走同一套归因引擎诊断。这就是「知树没有物理英语，但可以插件接入」的实现。
+ *
+ * 安全：只暴露能力，不暴露 API Key。
  */
 
 import type { LlmProvider, LlmRequest } from '@/services/llm/types';
+import {
+  registerPluginCourse,
+  unregisterPluginCourse,
+  getAllCourses,
+  type CoursePluginInput,
+} from '@/data/courses';
 
 /** 外部注入的模型调用器 —— 只需要 complete 一个方法 */
 export interface KnowTreeAdapter {
@@ -37,8 +46,14 @@ export interface KnowTreeApi {
   getDiagnoses(): unknown[];
   /** 传入题目图片 dataUrl 触发诊断 */
   diagnose(dataUrl: string, name?: string): Promise<void>;
-  /** 订阅自定义事件（knowtree:diagnosis / knowtree:adapter / knowtree:ready） */
+  /** 订阅自定义事件（knowtree:diagnosis / knowtree:adapter / knowtree:ready / knowtree:course） */
   on(event: string, cb: (data: unknown) => void): () => void;
+  /** 注册知识模块插件（物理、英语等课程的知识树） */
+  registerCourse(input: CoursePluginInput): { ok: true } | { ok: false; error: string };
+  /** 注销插件课程 */
+  unregisterCourse(courseId: string): void;
+  /** 列出全部课程（内置 + 插件） */
+  listCourses(): unknown[];
 }
 
 let storeGetter: (() => KnowTreeStoreView) | null = null;
@@ -95,6 +110,28 @@ export function mountKnowTreeApi(getStore: () => KnowTreeStoreView) {
       const handler = (e: Event) => cb((e as CustomEvent).detail);
       window.addEventListener(event, handler);
       return () => window.removeEventListener(event, handler);
+    },
+
+    registerCourse(input: CoursePluginInput): { ok: true } | { ok: false; error: string } {
+      const result = registerPluginCourse(input);
+      if (result.ok) {
+        // 通知 store 重新渲染课程下拉菜单
+        window.dispatchEvent(
+          new CustomEvent('knowtree:course', { detail: { courseId: input.tree.courseId, action: 'register' } }),
+        );
+      }
+      return result;
+    },
+
+    unregisterCourse(courseId: string): void {
+      unregisterPluginCourse(courseId);
+      window.dispatchEvent(
+        new CustomEvent('knowtree:course', { detail: { courseId, action: 'unregister' } }),
+      );
+    },
+
+    listCourses(): unknown[] {
+      return getAllCourses();
     },
   };
 
