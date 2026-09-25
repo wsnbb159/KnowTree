@@ -40,26 +40,40 @@ export interface MarketRegistry {
   plugins: MarketPlugin[];
 }
 
-const REGISTRY_URL =
-  'https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@main/plugins/registry.json';
-
-/*
- * 两处引用用了不同的版本策略，这是刻意的：
+/**
+ * 清单走**同源相对路径**，随站点一起部署。
  *
- * - 清单（本文件的 REGISTRY_URL）用 @main：它必须能**更新** —— 加新插件时
- *   不该需要改代码重新部署。分支上的缓存延迟是可接受的，因为下面有内置兜底。
- * - 插件脚本（FALLBACK_REGISTRY 与 registry.json 里的 script）钉**完整 commit sha**：
- *   它必须**不可变**。实测把 @main 用在脚本上，改了插件之后 CDN 还给旧版本，
- *   用户点安装装到的是过时代码 —— 而且不报错，最难查。
+ * 为什么不托管到 CDN：实测 jsDelivr 对分支名的缓存长达数天且刷不掉
+ * （purge 接口无效，query string 不参与缓存键：无论加多少时间戳，
+ * 拿回来的都是同一份旧内容）。把清单放上 CDN 的结果是「改了清单，线上还是旧内容」，
+ * 用户看到的广场永远慢一拍，而且界面上一切正常 —— 最难查的那一类问题。
+ * 同源则部署即最新，也不存在跨域问题。
  *
- * 每次改动 plugins/*.js 之后，跑 node scripts/pin-plugins.mjs 重新钉一次。
+ * 代价是「加插件要重新部署站点」。这个取舍划算：插件脚本本身仍可从任意远端地址
+ * 加载（script 支持完整 URL），生态的开放性没丢，丢掉的只是「清单热更新」这项非必需能力。
  */
+const REGISTRY_PATH = 'plugins/registry.json';
+
+function registryUrl(): string {
+  // document.baseURI 会带上实际部署路径，站点放在子目录下也能工作
+  return new URL(REGISTRY_PATH, document.baseURI).toString();
+}
+
+/**
+ * 把清单里的 script 解析成可 fetch 的绝对地址。
+ * 相对路径 = 站内插件（随站点更新）；完整 URL = 外部插件（作者自行保证可跨域）。
+ */
+function resolveScriptUrl(script: string): string {
+  return /^https?:\/\//i.test(script)
+    ? script
+    : new URL(script, document.baseURI).toString();
+}
 
 /**
  * 内置兜底清单。
- * CDN 可能拉不到（网络、缓存延迟、离线演示），此时广场不能变成一片空白 ——
- * 内置这份清单保证「插件」按钮点开永远有东西可看。
- * 注意：这里的地址必须与仓库里的 registry.json 保持一致（由 pin-plugins.mjs 一起钉）。
+ * 清单文件读不到（离线、部署异常）时，广场不能变成一片空白 ——
+ * 内置这份保证「插件」按钮点开永远有东西可看。
+ * 注意：内容必须与 public/plugins/registry.json 保持一致。
  */
 const FALLBACK_REGISTRY: MarketRegistry = {
   version: 1,
@@ -76,8 +90,8 @@ const FALLBACK_REGISTRY: MarketRegistry = {
       chapters: 4,
       nodes: 15,
       hasDemo: true,
-      script: 'https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@286de86e9bfe0cf343a5208368ad4dcae5ba2d7e/plugins/physics.js',
-      source: 'https://github.com/wsnbb159/KnowTree/blob/main/plugins/physics.js',
+      script: 'plugins/physics.js',
+      source: 'https://github.com/wsnbb159/KnowTree/blob/main/public/plugins/physics.js',
     },
   ],
 };
@@ -87,7 +101,7 @@ export async function fetchRegistry(): Promise<{
   fromFallback: boolean;
 }> {
   try {
-    const response = await fetch(`${REGISTRY_URL}?t=${Date.now()}`, { cache: 'no-store' });
+    const response = await fetch(registryUrl(), { cache: 'no-store' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const registry = (await response.json()) as MarketRegistry;
     if (!registry || !Array.isArray(registry.plugins)) {
@@ -107,7 +121,7 @@ export async function fetchRegistry(): Promise<{
  * 否则脚本内部抛错只会变成一条控制台日志，界面上一片安静。
  */
 export async function installPlugin(plugin: MarketPlugin): Promise<void> {
-  const response = await fetch(`${plugin.script}?t=${Date.now()}`, { cache: 'no-store' });
+  const response = await fetch(resolveScriptUrl(plugin.script), { cache: 'no-store' });
   if (!response.ok) throw new Error(`下载插件失败：HTTP ${response.status}`);
   const code = await response.text();
   if (!code.trim()) throw new Error('插件脚本是空的');

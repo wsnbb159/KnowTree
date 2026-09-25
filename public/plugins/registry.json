@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updatedAt": "2026-09-25",
-  "note": "知树知识模块插件广场清单。页面通过 jsDelivr 拉取本文件（CDN 带 CORS 头，纯前端可直接读）。新增插件 = 在本仓库 plugins/ 下放一个自注册脚本，并在这里加一条。",
+  "note": "知树知识模块插件广场清单。本文件随站点一起部署，页面以同源相对路径读取 —— 部署即最新，不受任何 CDN 缓存影响。script 可以是相对路径（站内插件，随站点更新），也可以是完整 URL（外部插件，须自行保证可跨域与内容不可变）。",
   "plugins": [
     {
       "id": "physics-mechanics",
@@ -14,8 +14,8 @@
       "chapters": 4,
       "nodes": 15,
       "hasDemo": true,
-      "script": "https://cdn.jsdelivr.net/gh/wsnbb159/KnowTree@286de86e9bfe0cf343a5208368ad4dcae5ba2d7e/plugins/physics.js",
-      "source": "https://github.com/wsnbb159/KnowTree/blob/main/plugins/physics.js"
+      "script": "plugins/physics.js",
+      "source": "https://github.com/wsnbb159/KnowTree/blob/main/public/plugins/physics.js"
     }
   ]
 }

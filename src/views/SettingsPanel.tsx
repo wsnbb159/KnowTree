@@ -410,7 +410,7 @@ function PluginCard() {
       <p className="mt-3 text-[12px] leading-relaxed text-ink-500">
         插件课程的数据只存在内存，刷新页面后需由容器重新注入；诊断记录、掌握度与错题本不受影响。
         接入规范见仓库 <code className="text-[11.5px]">docs/knowledge-plugin-api.md</code>，
-        可运行样例见 <code className="text-[11.5px]">plugins/physics.js</code>
+        可运行样例见 <code className="text-[11.5px]">public/plugins/physics.js</code>
         （也可在顶部的「插件」按钮里从插件广场一键安装）。
       </p>
     </Card>

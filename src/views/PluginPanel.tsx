@@ -200,6 +200,7 @@ export function PluginPanel({
                         </p>
                         <div className="mt-2 truncate text-[11px] text-ink-400">
                           脚本来源：{plugin.script}
+                          {/^https?:\/\//i.test(plugin.script) ? '（外部地址）' : '（站内，随站点部署）'}
                         </div>
                       </div>
                       <div className="shrink-0">
