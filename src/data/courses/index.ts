@@ -3,14 +3,13 @@ import { indexTree } from '@/domain/knowledge-tree';
 import type { DemoCase } from '@/fixtures/demo-cases';
 import { dataStructureTree } from './data-structure';
 import { calculusTree } from './calculus';
+import { linearAlgebraTree } from './linear-algebra';
+import { probabilityTree } from './probability';
 
 /**
  * 课程注册表。
  *
- * 《数据结构》与《高等数学》已完成建模，线代与概率论保留入口但标注为规划中 ——
- * 与其把四门课都做成半成品，不如把两门课做到能被当众验证。
- * 这个取舍会在作品介绍里如实说明。
- *
+ * 四门课全部完成建模（数据结构 38 / 高数 67 / 线代 25 / 概率 32）。
  * 插件课程：外部可通过 registerPluginCourse 动态注入知识树（如物理、英语），
  * 注入后自动出现在课程下拉菜单里，走同一套归因引擎。
  */
@@ -26,25 +25,27 @@ export const courses: Course[] = [
     name: '高等数学',
     audience: '理工科 · 大一',
     description:
-      '已完整建模：12 章 62 个知识点，含跨模块的隐式前置依赖（第 8 章贯通多元微分与曲面积分、第 11 章三大公式串起曲线/曲面/重积分）。',
+      '已完整建模：12 章 67 个知识点，含跨模块的隐式前置依赖（第 6 章定积分应用、第 8 章空间几何、第 11 章三大公式）。',
   },
   {
     id: 'linear-algebra',
     name: '线性代数',
     audience: '理工科 · 大一',
-    description: '规划中：矩阵运算、向量空间、特征值三大模块。',
+    description: '已完整建模：5 章 25 个知识点（行列式、矩阵、方程组、向量组、特征值与二次型）。',
   },
   {
     id: 'probability',
     name: '概率论与数理统计',
     audience: '理工科 · 大二',
-    description: '规划中：随机变量、分布、参数估计与假设检验。',
+    description: '已完整建模：8 章 32 个知识点（事件概率、随机变量、多维分布、数字特征、极限定理、抽样分布、参数估计、假设检验）。',
   },
 ];
 
 const trees: Partial<Record<CourseId, KnowledgeTree>> = {
   'data-structure': dataStructureTree,
   calculus: calculusTree,
+  'linear-algebra': linearAlgebraTree,
+  probability: probabilityTree,
 };
 
 /* ------------------------------------------------------------------ */

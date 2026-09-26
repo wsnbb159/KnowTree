@@ -62,6 +62,8 @@ import { demoCases } from '@/fixtures/demo-cases';
 import { calcDemoCases } from '@/fixtures/demo-cases-calculus';
 import { demoMastery } from '@/fixtures/demo-mastery';
 import { calculusMastery } from '@/fixtures/demo-mastery-calculus';
+import { linearAlgebraMastery } from '@/fixtures/demo-mastery-linear-algebra';
+import { probabilityMastery } from '@/fixtures/demo-mastery-probability';
 
 /* ------------------------------------------------------------------ */
 /* 按课程分发演示数据                                                  */
@@ -83,13 +85,17 @@ const DEMO_CASES_BY_COURSE: Partial<Record<CourseId, typeof demoCases>> = {
 const DEMO_MASTERY_BY_COURSE: Partial<Record<CourseId, MasteryRecord[]>> = {
   'data-structure': demoMastery,
   calculus: calculusMastery,
+  'linear-algebra': linearAlgebraMastery,
+  probability: probabilityMastery,
 };
 
 export function demoCasesFor(courseId: CourseId): typeof demoCases {
   const fromPlugin = getPluginDemoCases(courseId);
   if (fromPlugin) return fromPlugin;
   if (isPluginCourse(courseId)) return [];
-  return DEMO_CASES_BY_COURSE[courseId] ?? demoCases;
+  // 内置课程没有配样例就返回空数组，绝不回退到别的课程的样例 ——
+  // 回退会把《数据结构》的题拿给《线性代数》答，归因给荒唐结论且不报错。
+  return DEMO_CASES_BY_COURSE[courseId] ?? [];
 }
 
 export function demoMasteryFor(courseId: CourseId): MasteryRecord[] {
@@ -99,7 +105,7 @@ export function demoMasteryFor(courseId: CourseId): MasteryRecord[] {
     const tree = getTree(courseId);
     return tree ? baselineMastery(tree) : [];
   }
-  return DEMO_MASTERY_BY_COURSE[courseId] ?? demoMastery;
+  return DEMO_MASTERY_BY_COURSE[courseId] ?? [];
 }
 
 export function findDemoCaseIn(courseId: CourseId, id: string) {

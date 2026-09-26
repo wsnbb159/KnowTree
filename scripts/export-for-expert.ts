@@ -13,8 +13,12 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { dataStructureTree } from '../src/data/courses/data-structure.ts';
 import { calculusTree } from '../src/data/courses/calculus.ts';
+import { linearAlgebraTree } from '../src/data/courses/linear-algebra.ts';
+import { probabilityTree } from '../src/data/courses/probability.ts';
 import { demoMastery } from '../src/fixtures/demo-mastery.ts';
 import { calculusMastery } from '../src/fixtures/demo-mastery-calculus.ts';
+import { linearAlgebraMastery } from '../src/fixtures/demo-mastery-linear-algebra.ts';
+import { probabilityMastery } from '../src/fixtures/demo-mastery-probability.ts';
 
 const outDir = process.argv[2];
 if (!outDir) {
@@ -37,6 +41,18 @@ const payload = {
       textbook: '同济《高等数学》第七版',
       tree: calculusTree,
       demoMastery: calculusMastery,
+    },
+    'linear-algebra': {
+      name: '线性代数',
+      textbook: '同济《线性代数》第六版',
+      tree: linearAlgebraTree,
+      demoMastery: linearAlgebraMastery,
+    },
+    probability: {
+      name: '概率论与数理统计',
+      textbook: '浙大《概率论与数理统计》第四版',
+      tree: probabilityTree,
+      demoMastery: probabilityMastery,
     },
   },
 };
