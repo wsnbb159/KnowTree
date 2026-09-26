@@ -377,17 +377,104 @@ export const calculusTree: KnowledgeTree = {
     {
       id: 'calc.integral.geometry',
       courseId: 'calculus',
-      name: '定积分的几何与物理应用',
+      name: '定积分的几何意义',
       chapter: '第5章 定积分及其应用',
-      summary: '平面图形面积、旋转体体积、弧长，以及微元法的思想。',
-      difficulty: 4,
-      cognitive: 'apply',
+      summary: '曲边梯形的面积就是定积分：分割、近似、求和、取极限四步，是微元法的思想源头。',
+      difficulty: 3,
+      cognitive: 'understand',
       prerequisites: ['calc.integral.definite', 'calc.deriv.differential'],
       misconceptions: [
-        '建立微元时把「薄的厚度」当成 dx 还是 dy 搞混',
-        '求两曲线围成面积时不先求交点、不判断上下位置',
+        '把定积分当成「曲线下的有向面积」而忽略在 x 轴下方时积分为负',
+        '把「积分等于面积」当成恒等式，遇到上下都有曲线时直接套用',
       ],
-      sources: ['同济《高等数学》6.1–6.2'],
+      sources: ['同济《高等数学》5.1'],
+    },
+
+    /* ---------------- 第6章 定积分的应用 ---------------- */
+    {
+      id: 'calc.app.element',
+      courseId: 'calculus',
+      name: '定积分的元素法（微元法）',
+      chapter: '第6章 定积分的应用',
+      summary:
+        '把所求量 F 在区间微元 [x, x+dx] 上的部分量写成 f(x)dx，再积分求和 —— 这是所有定积分应用题的通用套路。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.integral.geometry', 'calc.integral.newton'],
+      misconceptions: [
+        '直接把 dx 当作「很小的 Δx」而不验证部分量是否确实是 f(x)Δx 的一阶近似（高阶无穷小不能随便丢）',
+        '微元取自 x 方向却用 y 方向积分（不先判断该对 x 还是对 y 积分）',
+        '积分区间没有按交点分段，一整段套一个式子',
+      ],
+      sources: ['同济《高等数学》6.1'],
+    },
+    {
+      id: 'calc.app.area',
+      courseId: 'calculus',
+      name: '平面图形的面积',
+      chapter: '第6章 定积分的应用',
+      summary:
+        '直角坐标、参数方程、极坐标三种情形下的面积公式；关键是先求交点分段，再判断谁在上、谁在外。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.app.element'],
+      misconceptions: [
+        '不先求两曲线交点就定限，导致上下位置在中途反转而面积算错（应为 |上-下| 的积分）',
+        '极坐标下面积写成 ∫r dθ，漏掉 r²/2 的 1/2 因子',
+        '极坐标的 θ 范围按图形的「可见部分」取，而不是按射线扫过图形的起止角',
+      ],
+      sources: ['同济《高等数学》6.2'],
+    },
+    {
+      id: 'calc.app.volume',
+      courseId: 'calculus',
+      name: '体积（旋转体与已知截面）',
+      chapter: '第6章 定积分的应用',
+      summary:
+        '旋转体用圆盘法/垫圈法（π∫R² 或 π∫(R²-r²)）与壳层法；已知截面面积时直接积分 A(x)。',
+      difficulty: 4,
+      cognitive: 'apply',
+      prerequisites: ['calc.app.element'],
+      misconceptions: [
+        '垫圈法写成 π∫(R-r)² 而不是 π∫(R²-r²)（这是旋转体体积最高频的错误）',
+        '绕 y 轴旋转时仍按 x 方向取微元，导致半径表达式与积分变量不一致',
+        '已知截面面积 A(x) 与旋转体圆盘面积混淆，把 A(x) 当成半径直接平方',
+      ],
+      sources: ['同济《高等数学》6.2'],
+    },
+    {
+      id: 'calc.app.arclength',
+      courseId: 'calculus',
+      name: '平面曲线的弧长',
+      chapter: '第6章 定积分的应用',
+      summary:
+        '弧长微元 ds = √(1+y\'²)dx，参数方程下 ds = √(x\'²+y\'²)dt，极坐标下 ds = √(r²+r\'²)dθ。',
+      difficulty: 5,
+      cognitive: 'apply',
+      prerequisites: ['calc.app.element'],
+      misconceptions: [
+        '弧长写成 ∫y dx 或 ∫|y| dx，漏掉根号下的 1+y\'²',
+        '参数方程下只积分 ∫√(x\'²+y\'²) 而不乘 dt（忘了积分变量是 t 而非 x）',
+        '对分段光滑曲线不做分段，一整段套一个弧长公式',
+      ],
+      sources: ['同济《高等数学》6.2'],
+    },
+    {
+      id: 'calc.app.physics',
+      courseId: 'calculus',
+      name: '定积分的物理应用',
+      chapter: '第6章 定积分的应用',
+      summary:
+        '变力沿直线做功 W=∫F(x)dx、水压力 P=∫ρg·h·宽 dh、引力按微元分解后积分。核心都是「先写微元再积分」。',
+      difficulty: 5,
+      cognitive: 'analyze',
+      prerequisites: ['calc.app.element'],
+      misconceptions: [
+        '水压力把压强 p=ρgh 当成常量直接乘总面积，忽略 h 随深度变化必须积分',
+        '变力做功直接用力乘总位移，而不是 ∫F(x)dx（力随位置变）',
+        '引力题只算大小不分解方向，忽略对称性才能抵消的横向分量',
+      ],
+      sources: ['同济《高等数学》6.3'],
     },
 
     /* ---------------- 第8章 空间解析几何与向量代数 ---------------- */

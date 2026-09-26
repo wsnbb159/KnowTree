@@ -61,6 +61,20 @@ export const calculusMastery: MasteryRecord[] = [
   m('calc.integral.improper', 55, 3),
   m('calc.integral.geometry', 60, 4),
 
+  /*
+   * 第6章 定积分的应用：刻意设为「已掌握」。
+   *
+   * 这不是回避 —— 这一章是后来补建的（原先被并进第 5 章的一个粗节点里），
+   * 而这份画像描述的是「换元失守导致下游塌方」的那个特定学生。
+   * 给新节点一个健康的分数，是为了让画像仍然只讲那一件事，
+   * 不要让新加入的节点凭空制造出第二条断层链，把叙事讲散。
+   */
+  m('calc.app.element', 78, 5),
+  m('calc.app.area', 75, 6),
+  m('calc.app.volume', 72, 4),
+  m('calc.app.arclength', 68, 2),
+  m('calc.app.physics', 66, 2),
+
   /* 第8章 空间解析几何：基础还行，点线面距离与二次曲面偏弱 */
   m('calc.geom.vector', 80, 5),
   m('calc.geom.product', 72, 6),

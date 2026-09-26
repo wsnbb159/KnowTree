@@ -48,7 +48,7 @@ console.log(
 
 console.log('\n--- A. 结构层断言 ---');
 
-check("节点数是 62", calculusTree.nodes.length === 62, `实际 ${calculusTree.nodes.length}`);
+check("节点数是 67", calculusTree.nodes.length === 67, `实际 ${calculusTree.nodes.length}`);
 check(
   '存在且仅存在一个根节点（课程有唯一入口）',
   index.roots.length === 1,
